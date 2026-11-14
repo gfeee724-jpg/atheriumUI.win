@@ -1,31 +1,40 @@
-# Atherium UI
-
 <p align="center">
-  <img src="assets/atherium-logo.png" alt="Atherium" width="180">
+  <img src="assets/banner.png" alt="Atherium UI - monochrome slate interface library for Roblox">
 </p>
 
+<h1 align="center">Atherium UI</h1>
+
 <p align="center">
-  <b>Monochrome slate interface library for Roblox</b><br>
+  <b>A modern monochrome UI library for Roblox, built with Luau.</b><br>
   Sidebar tabs, live controls, 3D viewport, charts, keybinds and a floating watermark.
 </p>
 
 <p align="center">
   <img alt="version" src="https://img.shields.io/badge/version-9.5-white">
   <img alt="language" src="https://img.shields.io/badge/luau-roblox-black">
-  <img alt="license" src="https://img.shields.io/badge/updates-weekly-white">
+  <img alt="updates" src="https://img.shields.io/badge/updates-weekly-white">
+  <a href="docs/API.md"><img alt="docs" src="https://img.shields.io/badge/docs-API-black"></a>
 </p>
 
 ---
 
 ## Overview
 
-Atherium is a single-theme UI library built for Roblox executors. Flat cards,
+Atherium is a single-theme interface library for Roblox scripts. Flat cards,
 hairline separators, Lucide icons and one accent color that you control. The
 window ships with camera-tracked acrylic blur, snap dragging, resizing, a
 searchable control list and full config save/load.
 
-Everything is one file: no dependencies, no assets to host, nothing to build on
-your side.
+The whole library is one file with no third-party Luau dependencies - nothing to
+install, nothing to build on your side.
+
+## Preview
+
+<!-- enabled as soon as the recorded assets land in assets/
+| Window | Components | Interaction |
+| --- | --- | --- |
+| ![main](assets/screenshot-main.png) | ![components](assets/screenshot-components.png) | ![demo](assets/demo.gif) |
+-->
 
 ## Project layout
 
@@ -73,6 +82,15 @@ loadstring(game:HttpGet(
 `RightShift` toggles the window, right-click the watermark for its segment menu.
 The full API lives in [`docs/API.md`](docs/API.md).
 
+## Requirements
+
+- A Roblox executor with `loadstring`, `game:HttpGet` and `getgenv`.
+- HTTP access for the icon set. Icons are fetched at runtime from the public
+  Lucide collection ([`Footagesus/Icons`](https://github.com/Footagesus/Icons)),
+  so a client without HTTP will render controls without glyphs. There are no
+  third-party Luau libraries involved - that request is the only external
+  dependency, and the UI itself is a single file.
+
 ## Updates
 
 The interface is updated **every week**: new controls, polish passes and
@@ -99,9 +117,6 @@ link will replace this section as soon as the channel is live.
 
 ## Notes
 
-- Icons are loaded at runtime from the public Lucide set
-  ([`Footagesus/Icons`](https://github.com/Footagesus/Icons)), so the client
-  needs HTTP access.
 - `getgenv().Atherium` exposes `{ Version, UI, Window, Watermark }` for other
   scripts. Names starting with `_` are private and may change.
 - `VibeUI.lua` is generated, never edited by hand.
