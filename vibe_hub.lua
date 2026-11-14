@@ -1,4 +1,4 @@
---// ATHERIUM v9.4 | flat slider track, single-piece thumb
+--// ATHERIUM v9.5 | uniform slider value slot, roomier cards
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "9.4"
+VibeUI.Version = "9.5"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -465,7 +465,6 @@ function Section:AddSlider(opts)
 	if max <= min then max = min + 1 end
 	local default = tonumber(opts.Default) or ((min + max) / 2)
 	local callback = opts.Callback or function() end
-	local permanentVal = opts.ShowValue == true
 
 	local row = Instance.new("Frame")
 	row.Name = "Row_" .. name
@@ -480,7 +479,7 @@ function Section:AddSlider(opts)
 
 	local label = Instance.new("TextLabel")
 	label.Name = "Title"
-	label.Size = UDim2.new(1, -76, 0, 16)
+	label.Size = UDim2.new(1, -92, 0, 16)
 	label.Position = UDim2.new(0, 12, 0, 8)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.GothamMedium
@@ -492,22 +491,28 @@ function Section:AddSlider(opts)
 	label.Parent = row
 	win:ThemeRegister(label, "text")
 
-	-- readout on the title line: permanent with ShowValue, otherwise it fades
-	-- in while the slider is hovered or dragged
-	local vlab = Instance.new("TextLabel")
-	vlab.Name = "Value"
-	vlab.Size = UDim2.new(0, 64, 0, 16)
-	vlab.AnchorPoint = Vector2.new(1, 0)
-	vlab.Position = UDim2.new(1, -12, 0, 8)
-	vlab.BackgroundTransparency = 1
-	vlab.Font = Enum.Font.Code
-	vlab.TextSize = 12
-	vlab.TextXAlignment = Enum.TextXAlignment.Right
-	vlab.TextColor3 = TXT_SOFT
-	vlab.Text = "0"
-	vlab.TextTransparency = permanentVal and 0 or 1
-	vlab.Parent = row
-	win:ThemeRegister(vlab, "sub")
+	-- right slot: fixed 64px, monospace digits, right aligned. Every slider
+	-- reserves the same slot so rows line up; ShowValue = false drops the slot
+	-- entirely instead of leaving an empty hole.
+	local showValue = opts.ShowValue ~= false
+	local vlab
+	if showValue then
+		vlab = Instance.new("TextLabel")
+		vlab.Name = "Value"
+		vlab.Size = UDim2.new(0, 64, 0, 16)
+		vlab.AnchorPoint = Vector2.new(1, 0)
+		vlab.Position = UDim2.new(1, -12, 0, 8)
+		vlab.BackgroundTransparency = 1
+		vlab.Font = Enum.Font.Code
+		vlab.TextSize = 12
+		vlab.TextXAlignment = Enum.TextXAlignment.Right
+		vlab.TextColor3 = TXT_SOFT
+		vlab.Text = "0"
+		vlab.Parent = row
+		win:ThemeRegister(vlab, "sub")
+	end
+	-- keep an 8px channel between the title and the value slot
+	label.Size = UDim2.new(1, showValue and -92 or -24, 0, 16)
 
 	local track = Instance.new("TextButton")
 	track.Name = "Track"
@@ -563,12 +568,14 @@ function Section:AddSlider(opts)
 	corner(thumb, 7)
 	local thumbGrad = Instance.new("UIGradient")
 	thumbGrad.Rotation = 90
-	thumbGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(238, 238, 246))
+	thumbGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(243, 243, 249))
 	thumbGrad.Parent = thumb
+	-- neutral 1px edge: visible against both the white fill and the dark rail,
+	-- so the capsule reads as one even glass rim instead of a top-only shine
 	local thumbRim = Instance.new("UIStroke")
-	thumbRim.Color = Color3.fromRGB(255, 255, 255)
+	thumbRim.Color = Color3.fromRGB(222, 222, 232)
 	thumbRim.Thickness = 1
-	thumbRim.Transparency = 0.55
+	thumbRim.Transparency = 0.4
 	thumbRim.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	thumbRim.Parent = thumb
 
@@ -576,7 +583,6 @@ function Section:AddSlider(opts)
 	local lastInt = math.floor(default + 0.5)
 	local dragging = false
 	local hover = false
-	local valShown = permanentVal
 	local RAIL_DIM = Color3.fromRGB(54, 54, 62)
 	local RAIL_HOT = Color3.fromRGB(68, 68, 78)
 
@@ -587,23 +593,21 @@ function Section:AddSlider(opts)
 		return tostring(math.floor(v + 0.5))
 	end
 
-	-- the number never floats over the row: it slides into the free title slot
-	local function showVal(on)
-		if permanentVal then return end
-		on = not not on
-		if valShown == on then return end
-		valShown = on
-		TweenService:Create(vlab, TweenInfo.new(on and 0.24 or 0.34, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			TextTransparency = on and 0 or 1,
+	-- the number sits still and only gains brightness while in use, so two
+	-- rows never disagree about alignment
+	local function toneVal(hot)
+		if not vlab then return end
+		TweenService:Create(vlab, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			TextColor3 = hot and TXT_MAIN or TXT_SOFT,
 		}):Play()
 	end
 
 	-- squash: idle capsule -> slightly taller on hover -> flattened and
 	-- stretched while dragging, then a springy return on release
 	local THUMB = {
-		idle = { w = 14, h = 18, dur = 0.46, style = Enum.EasingStyle.Back },
-		hover = { w = 16, h = 20, dur = 0.26, style = Enum.EasingStyle.Quad },
-		drag = { w = 20, h = 13, dur = 0.22, style = Enum.EasingStyle.Quad },
+		idle = { w = 15, h = 20, dur = 0.46, style = Enum.EasingStyle.Back },
+		hover = { w = 17, h = 22, dur = 0.26, style = Enum.EasingStyle.Quad },
+		drag = { w = 20, h = 14, dur = 0.22, style = Enum.EasingStyle.Quad },
 	}
 	local squashState = "idle"
 	local function squash(mode)
@@ -619,6 +623,7 @@ function Section:AddSlider(opts)
 	local function setActive(on)
 		local hot = on or dragging
 		TweenService:Create(rail, TweenInfo.new(0.22), { BackgroundColor3 = hot and RAIL_HOT or RAIL_DIM }):Play()
+		toneVal(hot)
 	end
 
 	local function place(a, instant)
@@ -639,7 +644,7 @@ function Section:AddSlider(opts)
 		if fire then win._dirty = true end
 		local a = (value - min) / math.max(1e-6, (max - min))
 		local txt = fmtVal(value)
-		vlab.Text = txt
+		if vlab then vlab.Text = txt end
 		place(a, instant)
 		local iv = math.floor(value + 0.5)
 		if fire then
@@ -664,7 +669,6 @@ function Section:AddSlider(opts)
 			squash("drag")
 			setActive(true)
 			apply(posToVal(input.Position.X), true, true)
-			showVal(true)
 		end
 	end)
 	track.MouseEnter:Connect(function()
@@ -672,14 +676,12 @@ function Section:AddSlider(opts)
 		hover = true
 		setActive(true)
 		squash("hover")
-		showVal(true)
 	end)
 	track.MouseLeave:Connect(function()
 		hover = false
 		if dragging then return end
 		squash("idle")
 		setActive(false)
-		showVal(false)
 	end)
 	local dragConn, endConn
 	dragConn = UserInputService.InputChanged:Connect(function(input)
@@ -695,7 +697,6 @@ function Section:AddSlider(opts)
 		dragging = false
 		squash(hover and "hover" or "idle")
 		setActive(hover)
-		showVal(hover)
 	end)
 	rail:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 		local a = (value - min) / math.max(1e-6, (max - min))
@@ -3382,8 +3383,8 @@ function Tab:AddSection(title, iconName)
 	hairline(card, 0)
 	win._glass(card, 0.34)
 	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0, 8)
-	pad.PaddingBottom = UDim.new(0, 8)
+	pad.PaddingTop = UDim.new(0, 14)
+	pad.PaddingBottom = UDim.new(0, 10)
 	pad.PaddingLeft = UDim.new(0, 6)
 	pad.PaddingRight = UDim.new(0, 6)
 	pad.Parent = card
@@ -6676,7 +6677,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.4 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.5 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -6818,7 +6819,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v9.4 built")
+	print("[ATHERIUM] demo v9.5 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)

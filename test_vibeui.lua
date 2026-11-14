@@ -100,7 +100,10 @@ check("AddSlider", function()
 		"rail should stay thin, got " .. tostring(rail.Size.Y.Offset))
 	local vlab = row:FindFirstChild("Value", true)
 	assert(vlab, "value readout missing")
-	assert(vlab.TextTransparency > 0.9, "value must stay hidden until hover/drag")
+	assert(vlab.TextTransparency < 0.05, "value should be visible by default")
+	assert(vlab.TextSize == 12, "value must stay on the 12px tabular size")
+	assert(vlab.TextXAlignment == Enum.TextXAlignment.Right, "value must be right aligned")
+	assert(vlab.Size.X.Offset == 64, "value slot must keep a fixed 64px width")
 	assert(vlab.Text == "75", "value readout out of sync: " .. tostring(vlab.Text))
 	-- one capsule + one rim: no concentric rings inside the thumb
 	local inner, rim = 0, 0
@@ -138,16 +141,15 @@ check("AddSlider", function()
 	end
 end)
 
-check("Slider ShowValue", function()
-	local s = sec:AddSlider({ Name = "Shown Slider", Min = 0, Max = 10, Default = 4, ShowValue = true })
+check("Slider ShowValue=false", function()
+	local s = sec:AddSlider({ Name = "Bare Slider", Min = 0, Max = 10, Default = 4, ShowValue = false })
 	s:Set(7)
-	local row = win._gui:FindFirstChild("Row_Shown Slider", true)
+	local row = win._gui:FindFirstChild("Row_Bare Slider", true)
 	assert(row, "slider row missing")
-	local found = false
-	for _, d in ipairs(row:GetDescendants()) do
-		if d:IsA("TextLabel") and d.Text == "7" and d.TextTransparency < 0.05 then found = true end
-	end
-	assert(found, "ShowValue=true did not render a readout")
+	assert(not row:FindFirstChild("Value", true), "ShowValue=false must drop the whole value slot")
+	local title = row:FindFirstChild("Title", true)
+	assert(title, "title missing")
+	assert(title.Size.X.Offset == -24, "hidden value slot should hand its width back to the title")
 end)
 
 check("AddDropdown", function()

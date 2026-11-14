@@ -10,7 +10,7 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"9.4"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"9.5"`). Check it when you depend on
 behaviour that was added later.
 
 Anything named with a leading underscore (`win._glass`, `win:_tc`, `VibeUI._demo`)
@@ -34,7 +34,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"9.4"` |
+| `VibeUI.Version` | build string, e.g. `"9.5"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -126,19 +126,20 @@ tg:Get() ; tg:Set(true, true) -- second arg = fire Callback
 
 ```lua
 local sl = section:AddSlider({ Name = "FOV", Min = 10, Max = 120,
-    Default = 70, ShowValue = false, Callback = function(v) end })
+    Default = 70, ShowValue = true, Callback = function(v) end })
 sl:Get() ; sl:Set(90) -- Set fires Callback
 ```
 
-The row is title + rail. The value is not shown permanently: it fades into the
-free right side of the title line while the slider is hovered or dragged, so
-nothing ever floats over the track. `ShowValue = true` keeps that readout on
-all the time. The track is one flat 5px capsule (no glow stack, no dark sleeve
-around the active part); the thumb is a single capsule with one hairline rim,
-sized 14x18, that grows to 16x20 on hover, flattens to 20x13 while dragging and
-springs back on release. Fast drags update position immediately (no tween),
-`Set()` and window resizes animate. Title text sits at a 12px left inset and the
-value ends at the same 12px right inset, so the two lines share one axis.
+The row is title + rail. The current value sits in a fixed 64px slot at the
+right of the title line, right aligned and monospace, so every slider lines up
+regardless of how many digits it has. It brightens while hovering or dragging
+and returns to the secondary tone afterwards. `ShowValue = false` removes that
+slot entirely and hands the width back to the title. The track is one flat 5px
+capsule (no glow stack, no dark sleeve around the active part); the thumb is a
+single 15x20 capsule with one hairline rim, sized 17x22 on hover, flattened to
+20x14 while dragging and sprung back on release. Fast drags update position
+immediately (no tween), `Set()` and window resizes animate. Title text sits at a
+12px left inset and the value ends at the same 12px right inset.
 
 ### AddButton
 
@@ -252,7 +253,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v9.4", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v9.5", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -282,7 +283,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "9.4"
+api.Version    -- "9.5"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)
