@@ -14,6 +14,7 @@
   <img alt="language" src="https://img.shields.io/badge/luau-roblox-black">
   <img alt="updates" src="https://img.shields.io/badge/updates-weekly-white">
   <a href="docs/API.md"><img alt="docs" src="https://img.shields.io/badge/docs-API-black"></a>
+  <a href="https://t.me/AtheriumWIN"><img alt="telegram" src="https://img.shields.io/badge/telegram-@AtheriumWIN-white"></a>
 </p>
 
 ---
@@ -107,9 +108,11 @@ assert(VibeUI.Version == "9.5", "stale VibeUI.lua, re-download it")
 
 ## Telegram
 
-An official **Telegram channel is coming soon**. Release notes, previews,
-screenshots and every future update will be published there first. The invite
-link will replace this section as soon as the channel is live.
+Official channel: **[t.me/AtheriumWIN](https://t.me/AtheriumWIN)**
+
+Release notes, previews, screenshots and every future update are published there
+first. Weekly progress reports, sneaky previews and dev news land on the channel
+before they reach this repository.
 
 ## Notes
 
