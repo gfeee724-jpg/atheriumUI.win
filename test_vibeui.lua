@@ -93,23 +93,43 @@ check("AddSlider", function()
 	assert(thumb.AbsoluteSize.X >= 10, "thumb too small")
 	assert(row:FindFirstChild("Rail", true), "rail missing")
 	assert(row:FindFirstChild("Fill", true), "fill missing")
-	assert(row:FindFirstChild("GlowCore", true), "no glow around the active rail")
+	local rail = row:FindFirstChild("Rail", true)
+	assert(not row:FindFirstChild("GlowCore", true), "glow band stack is back")
+	assert(not row:FindFirstChild("GlowWide", true), "glow band stack is back")
+	assert(rail.Size.Y.Offset > 0 and rail.Size.Y.Offset <= 6,
+		"rail should stay thin, got " .. tostring(rail.Size.Y.Offset))
 	local vlab = row:FindFirstChild("Value", true)
 	assert(vlab, "value readout missing")
 	assert(vlab.TextTransparency > 0.9, "value must stay hidden until hover/drag")
 	assert(vlab.Text == "75", "value readout out of sync: " .. tostring(vlab.Text))
-	-- two halo rings live inside the thumb, so it never looks pasted on
-	local halos = 0
+	-- one capsule + one rim: no concentric rings inside the thumb
+	local inner, rim = 0, 0
 	for _, ch in ipairs(thumb:GetChildren()) do
-		if ch:IsA("Frame") then halos = halos + 1 end
+		if ch:IsA("Frame") then inner = inner + 1 end
+		if ch:IsA("UIStroke") then rim = rim + 1 end
 	end
-	assert(halos >= 2, "thumb glow halos missing")
-	local rail = row:FindFirstChild("Rail", true)
+	assert(inner == 0, tostring(inner) .. " stacked frames inside the thumb")
+	assert(rim == 1, "thumb needs exactly one rim stroke, got " .. tostring(rim))
 	if rail.AbsoluteSize.Y > 0 then
 		local tyc = thumb.AbsolutePosition.Y + thumb.AbsoluteSize.Y / 2
 		local ryc = rail.AbsolutePosition.Y + rail.AbsoluteSize.Y / 2
 		assert(math.abs(tyc - ryc) <= 2.5,
 			string.format("thumb sits off the rail: thumb %.1f vs rail %.1f", tyc, ryc))
+	end
+	-- gutters: title, rail and value share the same 12px inset
+	if rail.AbsoluteSize.X > 0 then
+		local track = row:FindFirstChild("Track", true)
+		local gutL = track.AbsolutePosition.X - row.AbsolutePosition.X
+		local gutR = (row.AbsolutePosition.X + row.AbsoluteSize.X) - (track.AbsolutePosition.X + track.AbsoluteSize.X)
+		assert(math.abs(gutL - gutR) <= 1.5,
+			string.format("rail is not centered: left %.1f vs right %.1f", gutL, gutR))
+		local label = row:FindFirstChild("Title", true)
+		if label and vlab.AbsoluteSize.X > 0 then
+			local labL = label.AbsolutePosition.X - row.AbsolutePosition.X
+			local valR = (row.AbsolutePosition.X + row.AbsoluteSize.X) - (vlab.AbsolutePosition.X + vlab.AbsoluteSize.X)
+			assert(math.abs(labL - valR) <= 1.5,
+				string.format("value inset %.1f does not match title inset %.1f", valR, labL))
+		end
 	end
 	for _, d in ipairs(row:GetDescendants()) do
 		if d:IsA("TextLabel") and string.find(d.Text, "%%") then

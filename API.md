@@ -10,7 +10,7 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"9.3"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"9.4"`). Check it when you depend on
 behaviour that was added later.
 
 Anything named with a leading underscore (`win._glass`, `win:_tc`, `VibeUI._demo`)
@@ -34,7 +34,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"9.3"` |
+| `VibeUI.Version` | build string, e.g. `"9.4"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -133,10 +133,12 @@ sl:Get() ; sl:Set(90) -- Set fires Callback
 The row is title + rail. The value is not shown permanently: it fades into the
 free right side of the title line while the slider is hovered or dragged, so
 nothing ever floats over the track. `ShowValue = true` keeps that readout on
-all the time. The thumb is a white capsule riding the rail, connected to the
-fill through a soft halo; it grows slightly on hover, flattens and stretches
-while dragging, and springs back on release. Fast drags update position
-immediately (no tween), `Set()` and window resizes animate.
+all the time. The track is one flat 5px capsule (no glow stack, no dark sleeve
+around the active part); the thumb is a single capsule with one hairline rim,
+sized 14x18, that grows to 16x20 on hover, flattens to 20x13 while dragging and
+springs back on release. Fast drags update position immediately (no tween),
+`Set()` and window resizes animate. Title text sits at a 12px left inset and the
+value ends at the same 12px right inset, so the two lines share one axis.
 
 ### AddButton
 
@@ -250,7 +252,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v9.3", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v9.4", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -280,7 +282,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "9.3"
+api.Version    -- "9.4"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)

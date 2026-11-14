@@ -1,4 +1,4 @@
---// ATHERIUM v9.3 | slider thumb rides the rail
+--// ATHERIUM v9.4 | flat slider track, single-piece thumb
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "9.3"
+VibeUI.Version = "9.4"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -479,8 +479,9 @@ function Section:AddSlider(opts)
 	win._registerRow(row, name, self)
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -70, 0, 16)
-	label.Position = UDim2.new(0, 10, 0, 8)
+	label.Name = "Title"
+	label.Size = UDim2.new(1, -76, 0, 16)
+	label.Position = UDim2.new(0, 12, 0, 8)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.GothamMedium
 	label.TextSize = 13
@@ -497,7 +498,7 @@ function Section:AddSlider(opts)
 	vlab.Name = "Value"
 	vlab.Size = UDim2.new(0, 64, 0, 16)
 	vlab.AnchorPoint = Vector2.new(1, 0)
-	vlab.Position = UDim2.new(1, -10, 0, 8)
+	vlab.Position = UDim2.new(1, -12, 0, 8)
 	vlab.BackgroundTransparency = 1
 	vlab.Font = Enum.Font.Code
 	vlab.TextSize = 12
@@ -510,75 +511,46 @@ function Section:AddSlider(opts)
 
 	local track = Instance.new("TextButton")
 	track.Name = "Track"
-	track.Size = UDim2.new(1, -20, 0, 22)
-	track.Position = UDim2.new(0, 10, 0, 24)
+	track.Size = UDim2.new(1, -24, 0, 22)
+	track.Position = UDim2.new(0, 12, 0, 24)
 	track.BackgroundTransparency = 1
 	track.Text = ""
 	track.AutoButtonColor = false
 	track.Parent = row
 
-	-- soft white halo behind the active part of the rail: two stacked bands
-	-- with a vertical transparency ramp, no image assets involved. The band
-	-- keeps its own base alpha so the light can actually brighten.
-	local GLOW_IDLE = 0.62
-	local function halo(h, midTr, name2)
-		local g = Instance.new("Frame")
-		g.Name = name2 or "Glow"
-		g.AnchorPoint = Vector2.new(0, 0.5)
-		g.Position = UDim2.new(0, 0, 0.5, 0)
-		g.Size = UDim2.new(0, 0, 0, h)
-		g.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		g.BackgroundTransparency = GLOW_IDLE
-		g.BorderSizePixel = 0
-		g.Parent = track
-		corner(g, math.floor(h / 2))
-		local gr = Instance.new("UIGradient")
-		gr.Rotation = 90
-		gr.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(0.5, midTr),
-			NumberSequenceKeypoint.new(1, 1),
-		})
-		gr.Parent = g
-		return g
-	end
-	local glowWide = halo(22, 0.45, "GlowWide")
-	local glowCore = halo(12, 0.3, "GlowCore")
-
+	-- flat track: one 5px capsule. No glow stack, no dark sleeve around the
+	-- active part -- just a clean rounded line and an even fill.
 	local rail = Instance.new("Frame")
 	rail.Name = "Rail"
-	rail.Size = UDim2.new(1, 0, 0, 6)
-	rail.Position = UDim2.new(0, 0, 0.5, -3)
-	rail.BackgroundColor3 = Color3.fromRGB(32, 32, 37)
+	rail.Size = UDim2.new(1, 0, 0, 5)
+	rail.Position = UDim2.new(0, 0, 0.5, -2.5)
+	rail.BackgroundColor3 = Color3.fromRGB(54, 54, 62)
 	rail.BorderSizePixel = 0
 	rail.ClipsDescendants = true
 	rail.Parent = track
 	corner(rail, 3)
-	local railStroke = Instance.new("UIStroke")
-	railStroke.Color = Color3.fromRGB(58, 58, 66)
-	railStroke.Thickness = 1
-	railStroke.Transparency = 0.6
-	railStroke.Parent = rail
 
 	local fill = Instance.new("Frame")
 	fill.Name = "Fill"
 	fill.Size = UDim2.new(0, 0, 1, 0)
-	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	-- slightly off-white: pure #FFFFFF bloomed against the dark rail
+	fill.BackgroundColor3 = Color3.fromRGB(231, 231, 240)
 	fill.BorderSizePixel = 0
 	fill.Parent = rail
 	corner(fill, 3)
-	local fillGrad = Instance.new("UIGradient")
-	fillGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(226, 226, 236))
-	fillGrad.Parent = fill
 	win._reg(function(c)
 		pcall(function()
 			if fill.Parent then
-				TweenService:Create(fill, TweenInfo.new(0.25), {BackgroundColor3 = c}):Play()
+				-- the shipped accent is pure white; pull it a touch toward the
+				-- slate so the active part does not bloom over the rail
+				local tinted = c:Lerp(Color3.fromRGB(150, 150, 168), 0.1)
+				TweenService:Create(fill, TweenInfo.new(0.25), { BackgroundColor3 = tinted }):Play()
 			end
 		end)
 	end)
 
-	-- thumb: a soft capsule that sits on the fill, never a flat pasted circle
+	-- thumb: exactly one capsule + one hairline rim. The depth comes from the
+	-- capsule's own gradient, not from stacked halos or a fake shadow.
 	local thumb = Instance.new("Frame")
 	thumb.Name = "Thumb"
 	thumb.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -589,30 +561,24 @@ function Section:AddSlider(opts)
 	thumb.ZIndex = 4
 	thumb.Parent = track
 	corner(thumb, 7)
-
-	local function thumbHalo(dpad, tr, z)
-		local h = Instance.new("Frame")
-		h.AnchorPoint = Vector2.new(0.5, 0.5)
-		h.Position = UDim2.new(0.5, 0, 0.5, 0)
-		h.Size = UDim2.new(1, dpad, 1, dpad)
-		h.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		h.BackgroundTransparency = tr
-		h.BorderSizePixel = 0
-		h.ZIndex = z
-		h.Parent = thumb
-		corner(h, 40)
-		return h
-	end
-	thumbHalo(16, 0.94, 3)
-	thumbHalo(9, 0.86, 3)
+	local thumbGrad = Instance.new("UIGradient")
+	thumbGrad.Rotation = 90
+	thumbGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(238, 238, 246))
+	thumbGrad.Parent = thumb
+	local thumbRim = Instance.new("UIStroke")
+	thumbRim.Color = Color3.fromRGB(255, 255, 255)
+	thumbRim.Thickness = 1
+	thumbRim.Transparency = 0.55
+	thumbRim.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	thumbRim.Parent = thumb
 
 	local value = default
 	local lastInt = math.floor(default + 0.5)
 	local dragging = false
 	local hover = false
 	local valShown = permanentVal
-	local RAIL_DIM = Color3.fromRGB(32, 32, 37)
-	local RAIL_HOT = Color3.fromRGB(44, 44, 51)
+	local RAIL_DIM = Color3.fromRGB(54, 54, 62)
+	local RAIL_HOT = Color3.fromRGB(68, 68, 78)
 
 	local function fmtVal(v)
 		local span = max - min
@@ -653,9 +619,6 @@ function Section:AddSlider(opts)
 	local function setActive(on)
 		local hot = on or dragging
 		TweenService:Create(rail, TweenInfo.new(0.22), { BackgroundColor3 = hot and RAIL_HOT or RAIL_DIM }):Play()
-		TweenService:Create(railStroke, TweenInfo.new(0.22), { Transparency = hot and 0.35 or 0.6 }):Play()
-		TweenService:Create(glowCore, TweenInfo.new(0.26), { BackgroundTransparency = hot and 0 or GLOW_IDLE }):Play()
-		TweenService:Create(glowWide, TweenInfo.new(0.26), { BackgroundTransparency = hot and 0.1 or GLOW_IDLE }):Play()
 	end
 
 	local function place(a, instant)
@@ -665,13 +628,9 @@ function Section:AddSlider(opts)
 		if instant or dragging then
 			fill.Size = UDim2.new(a, 0, 1, 0)
 			thumb.Position = px
-			glowCore.Size = UDim2.new(a, 0, 0, 12)
-			glowWide.Size = UDim2.new(a, 0, 0, 22)
 		else
 			TweenService:Create(fill, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(a, 0, 1, 0) }):Play()
 			TweenService:Create(thumb, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = px }):Play()
-			TweenService:Create(glowCore, TweenInfo.new(0.24), { Size = UDim2.new(a, 0, 0, 12) }):Play()
-			TweenService:Create(glowWide, TweenInfo.new(0.24), { Size = UDim2.new(a, 0, 0, 22) }):Play()
 		end
 	end
 
@@ -6717,7 +6676,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.3 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.4 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -6859,7 +6818,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v9.3 built")
+	print("[ATHERIUM] demo v9.4 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
