@@ -1,0 +1,10 @@
+# publish whitelist: this folder holds many unrelated projects,
+# only the VibeUI files are tracked
+*
+!.gitignore
+!.gitattributes
+!README.md
+!API.md
+!VibeUI.lua
+!vibe_hub.lua
+!build_module.py
