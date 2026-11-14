@@ -28,13 +28,9 @@ searchable control list and full config save/load.
 The whole library is one file with no third-party Luau dependencies - nothing to
 install, nothing to build on your side.
 
-## Preview
-
-<!-- enabled as soon as the recorded assets land in assets/
-| Window | Components | Interaction |
-| --- | --- | --- |
-| ![main](assets/screenshot-main.png) | ![components](assets/screenshot-components.png) | ![demo](assets/demo.gif) |
--->
+<p align="center">
+  <img src="assets/atherium-intro.gif" alt="Atherium intro animation" width="760">
+</p>
 
 ## Project layout
 
