@@ -1,26 +1,52 @@
-# VibeUI
+# Atherium UI
 
-Monochrome slate UI library for Roblox (Luau): sidebar tabs, search, live
-controls, viewport preview, charts, keybind panel and a floating watermark.
+<p align="center">
+  <img src="assets/atherium-logo.png" alt="Atherium" width="180">
+</p>
 
-Everything is one theme: flat cards, hairline separators, Lucide icons, no
-color accents except the ones you set yourself. The window has camera-tracked
-acrylic blur, snap dragging and resizing.
+<p align="center">
+  <b>Monochrome slate interface library for Roblox</b><br>
+  Sidebar tabs, live controls, 3D viewport, charts, keybinds and a floating watermark.
+</p>
 
-## Files
+<p align="center">
+  <img alt="version" src="https://img.shields.io/badge/version-9.5-white">
+  <img alt="language" src="https://img.shields.io/badge/luau-roblox-black">
+  <img alt="license" src="https://img.shields.io/badge/updates-weekly-white">
+</p>
 
-| File | What it is |
+---
+
+## Overview
+
+Atherium is a single-theme UI library built for Roblox executors. Flat cards,
+hairline separators, Lucide icons and one accent color that you control. The
+window ships with camera-tracked acrylic blur, snap dragging, resizing, a
+searchable control list and full config save/load.
+
+Everything is one file: no dependencies, no assets to host, nothing to build on
+your side.
+
+## Project layout
+
+| Path | Contents |
 | --- | --- |
-| `VibeUI.lua` | the library (generated, `return VibeUI`) |
-| `vibe_hub.lua` | single-file demo: the whole UI plus a demo window, `loadstring`-ready |
-| `API.md` | full API reference |
-| `build_module.py` | regenerates `VibeUI.lua` from `vibe_hub.lua` |
+| `VibeUI.lua` | The library. Generated, returns the `VibeUI` table. |
+| `vibe_hub.lua` | Single-file demo: engine plus a ready-made showcase window. |
+| `test_vibeui.lua` | Smoke test. Loads the published build and exercises the whole API. |
+| `docs/API.md` | Full API reference: every control, option and method. |
+| `docs/CHANGELOG.md` | Release history, newest first. |
+| `tools/build_module.py` | Regenerates `VibeUI.lua` from `vibe_hub.lua`. |
+| `assets/` | Brand images used by this page. |
 
-## Usage
+## Install
 
 ```lua
--- library
-local VibeUI = loadstring(readfile("VibeUI.lua"))()
+-- 1. library module
+local VibeUI = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/VibeUI.lua"
+))()
+
 local win = VibeUI:CreateWindow({ Title = "My Hub" })
 local tab = win:AddTab("Main", "house")
 local sec = tab:AddSection("General", "sparkles")
@@ -31,49 +57,61 @@ win:CreateWatermark()
 ```
 
 ```lua
--- or the whole demo in one shot
-loadstring(game:HttpGet("<raw url of vibe_hub.lua>"))()
+-- 2. one-shot demo with the full showcase window
+loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/vibe_hub.lua"
+))()
 ```
-
-`RightShift` toggles the window. Right-click the watermark for its segment menu.
-See `API.md` for every control and method.
-
-## Stale copy check
-
-GitHub serves `raw.githubusercontent.com` through a CDN that can hold a file for
-a few minutes. If controls look like an older release, print the version you
-actually loaded:
 
 ```lua
-local VibeUI = loadstring(readfile("VibeUI.lua"))()
-print(VibeUI.Version)              -- should be "9.5"
-assert(VibeUI.Version == "9.5", "stale VibeUI.lua, re-download it")
+-- 3. smoke test: prints pass/fail for every control and the live fps
+loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/test_vibeui.lua"
+))()
 ```
 
-`readfile` loads whatever copy you saved earlier, so after an update either
-re-download the file or fetch it with a cache buster:
+`RightShift` toggles the window, right-click the watermark for its segment menu.
+The full API lives in [`docs/API.md`](docs/API.md).
+
+## Updates
+
+The interface is updated **every week**: new controls, polish passes and
+performance work land on `main` continuously, and every release is documented in
+[`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+
+- Check `VibeUI.Version` after loading; the current build is `9.5`.
+- Raw links sit behind a CDN cache for a few minutes after a push, so if a
+  control looks older than the changelog, re-fetch with a cache buster.
 
 ```lua
 local URL = "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/VibeUI.lua"
-local src = game:HttpGet(URL .. "?v=" .. tostring(os.time()))
-writefile("VibeUI.lua", src)
+writefile("VibeUI.lua", game:HttpGet(URL .. "?v=" .. tostring(os.time())))
+
+local VibeUI = loadstring(readfile("VibeUI.lua"))()
+assert(VibeUI.Version == "9.5", "stale VibeUI.lua, re-download it")
 ```
+
+## Telegram
+
+An official **Telegram channel is coming soon**. Release notes, previews,
+screenshots and every future update will be published there first. The invite
+link will replace this section as soon as the channel is live.
 
 ## Notes
 
-- Icons are loaded at runtime from the public Lucide icon set
-  (`Footagesus/Icons`), so the client needs HTTP access.
+- Icons are loaded at runtime from the public Lucide set
+  ([`Footagesus/Icons`](https://github.com/Footagesus/Icons)), so the client
+  needs HTTP access.
 - `getgenv().Atherium` exposes `{ Version, UI, Window, Watermark }` for other
   scripts. Names starting with `_` are private and may change.
-- `VibeUI.lua` is generated: run `python build_module.py` after editing
-  `vibe_hub.lua`.
+- `VibeUI.lua` is generated, never edited by hand.
 
 ## Build
 
 ```
-python build_module.py
+python tools/build_module.py            # regenerate VibeUI.lua
+python tools/build_module.py --check    # regenerate and run the Lua checkers
 ```
 
-Splits `vibe_hub.lua` at the demo marker, stamps `VibeUI.Version` into the
-banner, appends `return VibeUI`. Add `--check` to run the Lua balance checkers
-if they are present.
+The script copies `vibe_hub.lua` up to the demo marker, stamps
+`VibeUI.Version` into the banner and appends `return VibeUI`.

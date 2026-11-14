@@ -4,8 +4,14 @@
 !.gitignore
 !.gitattributes
 !README.md
-!API.md
 !VibeUI.lua
 !vibe_hub.lua
-!build_module.py
 !test_vibeui.lua
+
+# folders
+!assets/
+!assets/*
+!docs/
+!docs/*
+!tools/
+!tools/*

@@ -12,8 +12,9 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "vibe_hub.lua")
-DST = os.path.join(HERE, "VibeUI.lua")
+ROOT = os.path.dirname(HERE)  # repo root: sources live there, not in tools/
+SRC = os.path.join(ROOT, "vibe_hub.lua")
+DST = os.path.join(ROOT, "VibeUI.lua")
 MARKER = "--// ================= DEMO ================="
 
 CHECK_DIR = os.path.join(os.environ.get("TEMP", "."), "opencode")

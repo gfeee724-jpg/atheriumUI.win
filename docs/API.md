@@ -1,6 +1,8 @@
 # VibeUI - API reference
 
-Monochrome Slate UI library for Roblox (Luau). Two ways to use it:
+Monochrome Slate UI library for Roblox (Luau). Full control reference; see
+[`../README.md`](../README.md) for install snippets and the project layout.
+Two ways to use it:
 
 ```lua
 -- module build
@@ -31,7 +33,7 @@ is private: it may change without a version bump.
 `VibeUI.lua` is generated, never edited by hand:
 
 ```
-python build_module.py
+python tools/build_module.py
 ```
 
 It copies `vibe_hub.lua` up to the demo marker, stamps `VibeUI.Version` into the
