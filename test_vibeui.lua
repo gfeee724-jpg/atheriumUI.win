@@ -42,9 +42,18 @@ if not check("compile", function()
 	assert(type(VibeUI.CreateWindow) == "function", "CreateWindow missing")
 end) then return end
 
+local EXPECTED = "9.5" -- bump together with VibeUI.Version
+
 check("version", function()
 	assert(VibeUI.Version, "Version missing")
-	print("[VibeUI TEST] version = " .. tostring(VibeUI.Version) .. ", tag = " .. tostring(VibeUI.BuildTag))
+	local v = tostring(VibeUI.Version)
+	print("[VibeUI TEST] version = " .. v .. ", tag = " .. tostring(VibeUI.BuildTag))
+	if v ~= EXPECTED then
+		warn(string.format(
+			"[VibeUI TEST] module is v%s, expected v%s - this is a cached build. Re-run in a minute or add ?v=%d to the URL.",
+			v, EXPECTED, os.time()))
+	end
+	getgenv().VibeUITestExpected = EXPECTED
 end)
 
 -- 3. clean previous instance ---------------------------------------------------
@@ -91,6 +100,9 @@ check("AddSlider", function()
 	local thumb = row:FindFirstChild("Thumb", true)
 	assert(thumb, "thumb missing")
 	assert(thumb.AbsoluteSize.X >= 10, "thumb too small")
+	assert(thumb.Size.X.Offset == 15 and thumb.Size.Y.Offset == 20,
+		string.format("old slider geometry: thumb is %dx%d, expected 15x20",
+			thumb.Size.X.Offset, thumb.Size.Y.Offset))
 	assert(row:FindFirstChild("Rail", true), "rail missing")
 	assert(row:FindFirstChild("Fill", true), "fill missing")
 	local rail = row:FindFirstChild("Rail", true)

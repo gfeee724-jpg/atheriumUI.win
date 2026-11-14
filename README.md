@@ -38,6 +38,27 @@ loadstring(game:HttpGet("<raw url of vibe_hub.lua>"))()
 `RightShift` toggles the window. Right-click the watermark for its segment menu.
 See `API.md` for every control and method.
 
+## Stale copy check
+
+GitHub serves `raw.githubusercontent.com` through a CDN that can hold a file for
+a few minutes. If controls look like an older release, print the version you
+actually loaded:
+
+```lua
+local VibeUI = loadstring(readfile("VibeUI.lua"))()
+print(VibeUI.Version)              -- should be "9.5"
+assert(VibeUI.Version == "9.5", "stale VibeUI.lua, re-download it")
+```
+
+`readfile` loads whatever copy you saved earlier, so after an update either
+re-download the file or fetch it with a cache buster:
+
+```lua
+local URL = "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/VibeUI.lua"
+local src = game:HttpGet(URL .. "?v=" .. tostring(os.time()))
+writefile("VibeUI.lua", src)
+```
+
 ## Notes
 
 - Icons are loaded at runtime from the public Lucide icon set

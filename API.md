@@ -11,7 +11,17 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 ```
 
 `VibeUI.Version` is the build number (`"9.5"`). Check it when you depend on
-behaviour that was added later.
+behaviour that was added later:
+
+```lua
+local VibeUI = loadstring(readfile("VibeUI.lua"))()
+assert(VibeUI.Version == "9.5", "stale VibeUI.lua, re-download it")
+```
+
+`readfile` returns whatever copy you saved earlier, and raw URLs sit behind a
+CDN cache for a few minutes, so an old version number is the usual reason a
+control looks like a previous release. Fetch with `?v=<os.time()>` and
+`writefile` the result to refresh the local copy.
 
 Anything named with a leading underscore (`win._glass`, `win:_tc`, `VibeUI._demo`)
 is private: it may change without a version bump.
