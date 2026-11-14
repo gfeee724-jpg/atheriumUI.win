@@ -159,10 +159,32 @@ end)
 check("AddViewport", function()
 	local vp = sec2:AddViewport({ Name = "Test Viewport", Height = 200, AutoRotate = true, ShowControls = true })
 	vp:SetPlayer()
+	task.wait(0.25)
 	vp:Focus()
 	vp:SetDistance(9)
 	vp:SetFOV(40)
 	vp:SetAngles(35, 12)
+	local model = vp:GetModel()
+	assert(model, "no model in viewport")
+	local parts, hidden = 0, 0
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			parts = parts + 1
+			if (d.LocalTransparencyModifier or 0) > 0.05 then hidden = hidden + 1 end
+		end
+	end
+	assert(parts > 0, "viewport model has no parts")
+	assert(hidden == 0, tostring(hidden) .. " parts still first-person faded")
+	print("[VibeUI TEST] viewport parts = " .. tostring(parts) .. ", hidden = " .. tostring(hidden))
+end)
+
+check("Stream line", function()
+	local lp = sec2:AddChart({ Name = "Stream Line", Type = "line", Height = 90, MaxPoints = 20 })
+	lp:Stream(function() return 42 end, 0.1)
+	task.wait(0.6)
+	local d = lp:GetData()
+	assert(type(d) == "table" and #d >= 1, "line stream pushed nothing")
+	lp:Stop()
 end)
 
 check("Notify", function()
@@ -226,6 +248,22 @@ check("legacy aliases", function()
 	assert(env.AtheriumWin == win, "AtheriumWin alias broken")
 end)
 
+-- 7.5 perf sample --------------------------------------------------------------
+local avgFPS = 0
+check("perf sample", function()
+	local RunService = game:GetService("RunService")
+	local frames, t0 = 0, os.clock()
+	local conn = RunService.RenderStepped:Connect(function() frames = frames + 1 end)
+	task.wait(3)
+	conn:Disconnect()
+	avgFPS = frames / math.max(os.clock() - t0, 1e-3)
+	print(string.format("[VibeUI TEST] avg %.1f fps over 3s", avgFPS))
+	getgenv().VibeUITestFPS = avgFPS
+	if avgFPS < 30 then
+		warn(string.format("[VibeUI TEST] low fps: %.1f - try win:SetAcrylic(false)", avgFPS))
+	end
+end)
+
 -- 8. summary ------------------------------------------------------------------
 local pass, fail = 0, 0
 local failed = {}
@@ -238,7 +276,7 @@ for _, r in ipairs(results) do
 	end
 end
 
-local head = string.format("%d/%d passed in %.2fs", pass, pass + fail, os.clock() - t0)
+local head = string.format("%d/%d passed in %.2fs, %.1f fps", pass, pass + fail, os.clock() - t0, avgFPS)
 print("[VibeUI TEST] ===============================================")
 print("[VibeUI TEST] " .. head)
 for _, f in ipairs(failed) do print("[VibeUI TEST] FAILED " .. f) end

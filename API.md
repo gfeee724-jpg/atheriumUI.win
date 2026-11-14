@@ -10,7 +10,7 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"8.9"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"9.0"`). Check it when you depend on
 behaviour that was added later.
 
 Anything named with a leading underscore (`win._glass`, `win:_tc`, `VibeUI._demo`)
@@ -34,7 +34,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"8.9"` |
+| `VibeUI.Version` | build string, e.g. `"9.0"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -242,7 +242,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v8.9", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v9.0", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -272,7 +272,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "8.9"
+api.Version    -- "9.0"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)
