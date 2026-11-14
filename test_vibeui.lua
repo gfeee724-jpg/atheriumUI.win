@@ -94,15 +94,23 @@ check("AddSlider", function()
 	assert(row:FindFirstChild("Rail", true), "rail missing")
 	assert(row:FindFirstChild("Fill", true), "fill missing")
 	assert(row:FindFirstChild("GlowCore", true), "no glow around the active rail")
-	assert(row:FindFirstChild("Chip", true), "value chip missing")
-	local chip = row:FindFirstChild("Chip", true)
-	assert(chip.TextTransparency > 0.9, "chip should stay hidden until dragging")
+	local vlab = row:FindFirstChild("Value", true)
+	assert(vlab, "value readout missing")
+	assert(vlab.TextTransparency > 0.9, "value must stay hidden until hover/drag")
+	assert(vlab.Text == "75", "value readout out of sync: " .. tostring(vlab.Text))
 	-- two halo rings live inside the thumb, so it never looks pasted on
 	local halos = 0
 	for _, ch in ipairs(thumb:GetChildren()) do
 		if ch:IsA("Frame") then halos = halos + 1 end
 	end
 	assert(halos >= 2, "thumb glow halos missing")
+	local rail = row:FindFirstChild("Rail", true)
+	if rail.AbsoluteSize.Y > 0 then
+		local tyc = thumb.AbsolutePosition.Y + thumb.AbsoluteSize.Y / 2
+		local ryc = rail.AbsolutePosition.Y + rail.AbsoluteSize.Y / 2
+		assert(math.abs(tyc - ryc) <= 2.5,
+			string.format("thumb sits off the rail: thumb %.1f vs rail %.1f", tyc, ryc))
+	end
 	for _, d in ipairs(row:GetDescendants()) do
 		if d:IsA("TextLabel") and string.find(d.Text, "%%") then
 			error("percent text still sits on the rail: " .. d:GetFullName())
