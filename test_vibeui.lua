@@ -86,6 +86,17 @@ check("AddSlider", function()
 	assert(tonumber(s:Get()) == 30, "default not applied")
 	s:Set(75)
 	assert(tonumber(s:Get()) == 75, "Set(75) not applied")
+	local row = win._gui:FindFirstChild("Row_Test Slider", true)
+	assert(row, "slider row missing")
+	local thumb = row:FindFirstChild("Thumb", true)
+	assert(thumb, "thumb missing")
+	assert(thumb.AbsoluteSize.X >= 6, "thumb too small")
+	assert(row:FindFirstChild("Rail", true), "rail missing")
+	for _, d in ipairs(row:GetDescendants()) do
+		if d:IsA("TextLabel") and string.find(d.Text, "%%") then
+			error("percent text still sits on the rail: " .. d:GetFullName())
+		end
+	end
 end)
 
 check("AddDropdown", function()

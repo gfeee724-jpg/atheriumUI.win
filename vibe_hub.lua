@@ -1,4 +1,4 @@
---// ATHERIUM v9.0 | lighter runtime, rebuilt charts
+--// ATHERIUM v9.1 | premium slider rail
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "9.0"
+VibeUI.Version = "9.1"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -460,14 +460,15 @@ end
 function Section:AddSlider(opts)
 	local win = self._win
 	local name = opts.Name or "Slider"
-	local min = opts.Min or 0
-	local max = opts.Max or 100
-	local default = opts.Default or ((min + max) / 2)
+	local min = tonumber(opts.Min) or 0
+	local max = tonumber(opts.Max) or 100
+	if max <= min then max = min + 1 end
+	local default = tonumber(opts.Default) or ((min + max) / 2)
 	local callback = opts.Callback or function() end
 
 	local row = Instance.new("Frame")
 	row.Name = "Row_" .. name
-	row.Size = UDim2.new(1, 0, 0, 52)
+	row.Size = UDim2.new(1, 0, 0, 46)
 	row.BackgroundColor3 = BG_HOVER
 	row.BackgroundTransparency = 1
 	row.BorderSizePixel = 0
@@ -477,50 +478,61 @@ function Section:AddSlider(opts)
 	win._registerRow(row, name, self)
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -20, 0, 18)
+	label.Size = UDim2.new(1, -70, 0, 16)
 	label.Position = UDim2.new(0, 10, 0, 6)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.GothamMedium
 	label.TextSize = 13
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.TextColor3 = TXT_MAIN
+	label.TextTruncate = Enum.TextTruncate.AtEnd
 	label.Text = name
 	label.Parent = row
 	win:ThemeRegister(label, "text")
 
+	-- value lives on the title line: nothing overlaps the track any more
+	local vlab = Instance.new("TextLabel")
+	vlab.Size = UDim2.new(0, 60, 0, 16)
+	vlab.AnchorPoint = Vector2.new(1, 0)
+	vlab.Position = UDim2.new(1, -10, 0, 6)
+	vlab.BackgroundTransparency = 1
+	vlab.Font = Enum.Font.Code
+	vlab.TextSize = 12
+	vlab.TextXAlignment = Enum.TextXAlignment.Right
+	vlab.TextColor3 = TXT_SOFT
+	vlab.Text = "0"
+	vlab.Parent = row
+	win:ThemeRegister(vlab, "sub")
+
 	local track = Instance.new("TextButton")
-	track.Size = UDim2.new(1, -20, 0, 20)
+	track.Size = UDim2.new(1, -20, 0, 18)
 	track.Position = UDim2.new(0, 10, 0, 26)
 	track.BackgroundTransparency = 1
 	track.Text = ""
 	track.AutoButtonColor = false
 	track.Parent = row
 
-	-- thin bar: soft 2px corners + faint drop shadow lifting it off the card
-	local barShadow = Instance.new("Frame")
-	barShadow.Name = "BarShadow"
-	barShadow.Size = UDim2.new(1, 0, 0, 4)
-	barShadow.Position = UDim2.new(0, 0, 0.5, -1)
-	barShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	barShadow.BackgroundTransparency = 0.82
-	barShadow.BorderSizePixel = 0
-	barShadow.Parent = track
-	corner(barShadow, 2)
-
+	-- 4px rail, rounded both ends, fill clipped inside
 	local bar = Instance.new("Frame")
+	bar.Name = "Rail"
 	bar.Size = UDim2.new(1, 0, 0, 4)
 	bar.Position = UDim2.new(0, 0, 0.5, -2)
 	bar.BackgroundColor3 = Color3.fromRGB(39, 39, 42)
 	bar.BorderSizePixel = 0
+	bar.ClipsDescendants = true
 	bar.Parent = track
 	corner(bar, 2)
 
 	local fill = Instance.new("Frame")
+	fill.Name = "Fill"
 	fill.Size = UDim2.new(0, 0, 1, 0)
 	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	fill.BorderSizePixel = 0
 	fill.Parent = bar
 	corner(fill, 2)
+	local fillGrad = Instance.new("UIGradient")
+	fillGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(214, 214, 226))
+	fillGrad.Parent = fill
 	win._reg(function(c)
 		pcall(function()
 			if fill.Parent then
@@ -529,91 +541,112 @@ function Section:AddSlider(opts)
 		end)
 	end)
 
-	local pct = Instance.new("TextLabel")
-	pct.Size = UDim2.new(0, 40, 0, 16)
-	pct.AnchorPoint = Vector2.new(0, 0.5)
-	pct.Position = UDim2.new(0, 0, 0.5, 0)
-	pct.BackgroundTransparency = 1
-	pct.Font = Enum.Font.Code
-	pct.TextSize = 12
-	pct.TextXAlignment = Enum.TextXAlignment.Left
-	pct.TextColor3 = Color3.fromRGB(255, 255, 255)
-	pct.TextStrokeTransparency = 0
-	pct.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	pct.Text = "0%"
-	pct.Parent = track
-	win:ThemeRegister(pct, "text")
-	local pctStroke = Instance.new("UIStroke")
-	pctStroke.Color = Color3.fromRGB(0, 0, 0)
-	pctStroke.Thickness = 1
-	pctStroke.Parent = pct
+	-- thumb: small knob, grows on hover/drag, ring keeps it readable on top
+	-- of the white fill and on the dark rail
+	local thumb = Instance.new("Frame")
+	thumb.Name = "Thumb"
+	thumb.AnchorPoint = Vector2.new(0.5, 0.5)
+	thumb.Position = UDim2.new(0, 0, 0.5, 0)
+	thumb.Size = UDim2.new(0, 8, 0, 8)
+	thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	thumb.BorderSizePixel = 0
+	thumb.ZIndex = 2
+	thumb.Parent = track
+	corner(thumb, 6)
+	local thumbRing = Instance.new("UIStroke")
+	thumbRing.Color = Color3.fromRGB(9, 9, 11)
+	thumbRing.Thickness = 2
+	thumbRing.Transparency = 0.25
+	thumbRing.Parent = thumb
 
 	local value = default
 	local lastInt = math.floor(default + 0.5)
 	local dragging = false
-	local function apply(v, fire)
-		value = math.clamp(v, min, max)
+	local hover = false
+	local RAIL_DIM = Color3.fromRGB(39, 39, 42)
+	local RAIL_HOT = Color3.fromRGB(56, 56, 64)
+
+	local function fmtVal(v)
+		local span = max - min
+		if span <= 5 then return string.format("%.2f", v) end
+		if span <= 20 then return string.format("%.1f", v) end
+		return tostring(math.floor(v + 0.5))
+	end
+
+	local function place(a, instant)
+		local px = UDim2.new(a, 0, 0, 0)
+		if instant or dragging then
+			fill.Size = UDim2.new(a, 0, 1, 0)
+			thumb.Position = px
+		else
+			TweenService:Create(fill, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(a, 0, 1, 0) }):Play()
+			TweenService:Create(thumb, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = px }):Play()
+		end
+	end
+
+	local function apply(v, fire, instant)
+		value = math.clamp(tonumber(v) or value, min, max)
 		if fire then win._dirty = true end
 		local a = (value - min) / math.max(1e-6, (max - min))
-		fill.Size = UDim2.new(a, 0, 1, 0)
-		pct.Text = tostring(math.floor(a * 100 + 0.5)) .. "%"
-		local bw = bar.AbsoluteSize.X
-		if bw > 0 then
-			local tw = 40
-			pct.Position = UDim2.new(0, math.max(0, math.min(a * bw, math.max(0, bw - tw)) - 6), 0.5, 0)
-		end
+		place(a, instant)
+		vlab.Text = fmtVal(value)
 		local iv = math.floor(value + 0.5)
-		if fire and iv ~= lastInt then
-			lastInt = iv
-			pcall(callback, value)
-			print(string.format("[ATHERIUM] slider '%s' -> %s (%s)", name, tostring(iv), pct.Text))
-		elseif fire then
+		if fire then
+			if iv ~= lastInt then
+				lastInt = iv
+				print(string.format("[ATHERIUM] slider '%s' -> %s", name, fmtVal(value)))
+			end
 			pcall(callback, value)
 		end
 	end
-	apply(default, false)
-	task.defer(function()
-		apply(value, false)
-	end)
+
+	apply(default, false, true)
 
 	local function posToVal(x)
 		local w = math.max(1, bar.AbsoluteSize.X)
 		return min + (max - min) * math.clamp((x - bar.AbsolutePosition.X) / w, 0, 1)
 	end
-	local TRACK_DIM = Color3.fromRGB(39, 39, 42)
-	local TRACK_HOT = Color3.fromRGB(58, 58, 66)
+
+	local function setHover(on)
+		hover = on
+		local hot = on or dragging
+		TweenService:Create(bar, TweenInfo.new(0.15), { BackgroundColor3 = hot and RAIL_HOT or RAIL_DIM }):Play()
+		TweenService:Create(thumb, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, hot and 12 or 8, 0, hot and 12 or 8),
+		}):Play()
+		TweenService:Create(thumbRing, TweenInfo.new(0.15), { Transparency = hot and 0.4 or 0.25 }):Play()
+		TweenService:Create(vlab, TweenInfo.new(0.15), { TextColor3 = hot and TXT_MAIN or TXT_SOFT }):Play()
+	end
+
 	track.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
-			TweenService:Create(bar, TweenInfo.new(0.12), {BackgroundColor3 = TRACK_HOT}):Play()
-			apply(posToVal(input.Position.X), true)
+			setHover(true)
+			apply(posToVal(input.Position.X), true, true)
 		end
 	end)
-	track.MouseEnter:Connect(function()
-		if not dragging then
-			TweenService:Create(bar, TweenInfo.new(0.12), {BackgroundColor3 = TRACK_HOT}):Play()
-		end
-	end)
-	track.MouseLeave:Connect(function()
-		if not dragging then
-			TweenService:Create(bar, TweenInfo.new(0.18), {BackgroundColor3 = TRACK_DIM}):Play()
-		end
-	end)
+	track.MouseEnter:Connect(function() if not dragging then setHover(true) end end)
+	track.MouseLeave:Connect(function() if not dragging then setHover(false) end end)
 	UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			apply(posToVal(input.Position.X), true)
+			apply(posToVal(input.Position.X), true, true)
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 			dragging = false
-			TweenService:Create(bar, TweenInfo.new(0.18), {BackgroundColor3 = TRACK_DIM}):Play()
+			setHover(hover)
 		end
+	end)
+	-- keep the knob aligned if the window is resized
+	bar:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		local a = (value - min) / math.max(1e-6, (max - min))
+		place(a, true)
 	end)
 
 	local obj = {}
 	function obj:Get() return value end
-	function obj:Set(v) apply(v, true) end
+	function obj:Set(v) apply(v, true, false) end
 	table.insert(win._cfg, { kind = "slider", tab = self._tab._name, sec = self._title or "?", name = name, get = function() return obj:Get() end, set = function(v) obj:Set(tonumber(v) or value) end })
 	pcall(callback, value)
 	return obj
@@ -6585,7 +6618,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.0 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.1 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -6727,7 +6760,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v9.0 built")
+	print("[ATHERIUM] demo v9.1 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
