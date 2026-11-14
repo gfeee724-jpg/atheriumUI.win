@@ -10,7 +10,7 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"9.1"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"9.2"`). Check it when you depend on
 behaviour that was added later.
 
 Anything named with a leading underscore (`win._glass`, `win:_tc`, `VibeUI._demo`)
@@ -34,7 +34,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"9.1"` |
+| `VibeUI.Version` | build string, e.g. `"9.2"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -126,9 +126,16 @@ tg:Get() ; tg:Set(true, true) -- second arg = fire Callback
 
 ```lua
 local sl = section:AddSlider({ Name = "FOV", Min = 10, Max = 120,
-    Default = 70, Callback = function(v) end })
+    Default = 70, ShowValue = false, Callback = function(v) end })
 sl:Get() ; sl:Set(90) -- Set fires Callback
 ```
+
+The row is title + rail. The value is not shown permanently: while you drag,
+a small chip fades in above the thumb and follows it. `ShowValue = true` adds a
+static readout on the title line (right side) for sliders that need it always
+visible. The thumb is a white capsule connected to the fill with a soft halo;
+it flattens and stretches while dragging, and springs back on release. Fast
+drags update position immediately (no tween), `Set()` and window resizes animate.
 
 ### AddButton
 
@@ -242,7 +249,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v9.1", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v9.2", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -272,7 +279,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "9.1"
+api.Version    -- "9.2"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)

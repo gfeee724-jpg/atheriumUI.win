@@ -90,13 +90,36 @@ check("AddSlider", function()
 	assert(row, "slider row missing")
 	local thumb = row:FindFirstChild("Thumb", true)
 	assert(thumb, "thumb missing")
-	assert(thumb.AbsoluteSize.X >= 6, "thumb too small")
+	assert(thumb.AbsoluteSize.X >= 10, "thumb too small")
 	assert(row:FindFirstChild("Rail", true), "rail missing")
+	assert(row:FindFirstChild("Fill", true), "fill missing")
+	assert(row:FindFirstChild("GlowCore", true), "no glow around the active rail")
+	assert(row:FindFirstChild("Chip", true), "value chip missing")
+	local chip = row:FindFirstChild("Chip", true)
+	assert(chip.TextTransparency > 0.9, "chip should stay hidden until dragging")
+	-- two halo rings live inside the thumb, so it never looks pasted on
+	local halos = 0
+	for _, ch in ipairs(thumb:GetChildren()) do
+		if ch:IsA("Frame") then halos = halos + 1 end
+	end
+	assert(halos >= 2, "thumb glow halos missing")
 	for _, d in ipairs(row:GetDescendants()) do
 		if d:IsA("TextLabel") and string.find(d.Text, "%%") then
 			error("percent text still sits on the rail: " .. d:GetFullName())
 		end
 	end
+end)
+
+check("Slider ShowValue", function()
+	local s = sec:AddSlider({ Name = "Shown Slider", Min = 0, Max = 10, Default = 4, ShowValue = true })
+	s:Set(7)
+	local row = win._gui:FindFirstChild("Row_Shown Slider", true)
+	assert(row, "slider row missing")
+	local found = false
+	for _, d in ipairs(row:GetDescendants()) do
+		if d:IsA("TextLabel") and d.Text == "7" and d.TextTransparency < 0.05 then found = true end
+	end
+	assert(found, "ShowValue=true did not render a readout")
 end)
 
 check("AddDropdown", function()
