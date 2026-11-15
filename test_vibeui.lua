@@ -42,7 +42,7 @@ if not check("compile", function()
 	assert(type(VibeUI.CreateWindow) == "function", "CreateWindow missing")
 end) then return end
 
-local EXPECTED = "9.5" -- bump together with VibeUI.Version
+local EXPECTED = "10.0" -- bump together with VibeUI.Version
 
 check("version", function()
 	assert(VibeUI.Version, "Version missing")
@@ -170,6 +170,40 @@ check("AddDropdown", function()
 	d:SetOptions({ "One", "Two", "Three" })
 	d:Set("Three")
 	assert(d:Get() == "Three", "Set after SetOptions failed")
+end)
+
+check("AddDropdown Multiple", function()
+	local d = sec:AddDropdown({
+		Name = "Multi Dropdown",
+		Options = { "Head", "Torso", "Arms", "Legs" },
+		Default = { "Head", "Torso" },
+		Multiple = true,
+	})
+	assert(d:IsMultiple(), "Multiple flag not honoured")
+	local got = d:Get()
+	assert(type(got) == "table" and #got == 2, "default selection not applied, got " .. tostring(#got))
+	d:Set({ "Legs" })
+	got = d:Get()
+	assert(#got == 1 and got[1] == "Legs", "Set(table) failed")
+	d:Set({ "Head", "Arms", "Nope" })
+	got = d:Get()
+	assert(#got == 2, "Set should ignore unknown options, got " .. tostring(#got))
+	d:SetOptions({ "Head", "Legs" })
+	got = d:Get()
+	assert(#got == 1 and got[1] == "Head", "SetOptions should drop selections that vanished")
+end)
+
+check("Dropdown search", function()
+	local d = sec:AddDropdown({
+		Name = "Long List",
+		Options = { "one", "two", "three", "four", "five", "six", "seven", "eight" },
+	})
+	d:Open()
+	local row = win._gui:FindFirstChild("Row_Long List", true)
+	assert(row, "dropdown row missing")
+	local box = row:FindFirstChild("Search", true)
+	assert(box and box:IsA("TextBox"), "long lists should render a search field")
+	d:Close()
 end)
 
 check("AddTextBox", function()

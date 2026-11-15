@@ -1,7 +1,24 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `9.5`;
+All notable changes to Atherium UI. Newest first. The current build is `10.0`;
 `VibeUI.Version` matches the newest entry.
+
+## 10.0
+
+- Sidebar tab list is now a `ScrollingFrame` with `AutomaticCanvasSize`, so a hub
+  with a dozen tabs scrolls instead of colliding with the profile card.
+- Tooltips: any control accepts `Tooltip = "text"`. One shared bubble is reused
+  for every row, appears after a 0.35s hover (0.45s long-press on touch), flips
+  below the row when there is no room above, and caps at 230x180.
+- Dropdown v2: `Multiple = true` for multi-select with `Select all` / `Clear`,
+  a search field that turns on automatically past six options, an eight-row
+  scroll window, and `IsMultiple()`, `Open()`, `Close()` on the handle.
+  Single-select calls are unchanged.
+- Notify v2: cards size themselves to the text, messages queue past
+  `NotifyLimit` (default 4), click to dismiss, four kinds (`info`, `success`,
+  `warn`, `error`) and a thin life bar. `win:Notify` also accepts a table and
+  returns a handle with `:Close()`.
+- Version bumped to `10.0`; module rebuilt.
 
 ## 9.5
 

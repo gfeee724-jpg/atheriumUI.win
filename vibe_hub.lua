@@ -1,4 +1,4 @@
---// ATHERIUM v9.5 | uniform slider value slot, roomier cards
+--// ATHERIUM v10.0 | scrolling sidebar, tooltips, dropdown v2, notify v2
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "9.5"
+VibeUI.Version = "10.0"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -365,6 +365,7 @@ function Section:AddToggle(opts)
 	corner(row, 6)
 	hoverRow(row)
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -64, 1, 0)
@@ -476,6 +477,7 @@ function Section:AddSlider(opts)
 	row.LayoutOrder = #self._body:GetChildren()
 	corner(row, 6)
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local label = Instance.new("TextLabel")
 	label.Name = "Title"
@@ -732,6 +734,7 @@ function Section:AddButton(opts)
 	corner(btn, 8)
 	if dark then stroke(btn, Color3.fromRGB(39, 39, 42), 0, 1) end
 	win._registerRow(btn, name, self)
+	if opts.Tooltip then win:_attachTip(btn, opts.Tooltip) end
 	makeIcon(btn, icon, 14, dark and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(9, 9, 11), UDim2.new(0, 12, 0.5, -7))
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = dark and Color3.fromRGB(45, 45, 53) or Color3.fromRGB(215, 215, 222)}):Play()
@@ -753,8 +756,10 @@ end
 function Section:AddDropdown(opts)
 	local win = self._win
 	local name = opts.Name or "Dropdown"
-	local options = opts.Options or { "Option 1", "Option 2" }
-	local default = opts.Default or options[1]
+	local options = {}
+	for i, o in ipairs(opts.Options or { "Option 1", "Option 2" }) do options[i] = tostring(o) end
+	local multiple = opts.Multiple == true
+	local allowSearch = opts.Search ~= false and #options > 6
 	local callback = opts.Callback or function() end
 
 	local row = Instance.new("TextButton")
@@ -769,6 +774,7 @@ function Section:AddDropdown(opts)
 	corner(row, 6)
 	hoverRow(row)
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -130, 1, 0)
@@ -801,6 +807,7 @@ function Section:AddDropdown(opts)
 	end)
 
 	local cur = Instance.new("TextLabel")
+	cur.Name = "Value"
 	cur.Size = UDim2.new(1, -32, 1, 0)
 	cur.Position = UDim2.new(0, 10, 0, 0)
 	cur.BackgroundTransparency = 1
@@ -809,21 +816,21 @@ function Section:AddDropdown(opts)
 	cur.TextXAlignment = Enum.TextXAlignment.Left
 	cur.TextTruncate = Enum.TextTruncate.AtEnd
 	cur.TextColor3 = TXT_MAIN
-	cur.Text = tostring(default)
+	cur.Text = ""
 	cur.Parent = trigger
 	win:ThemeRegister(cur, "text")
 	local chev = makeIcon(trigger, "chevron-down", 13, ICON_FAINT, UDim2.new(1, -20, 0.5, -6))
 
 	local list = Instance.new("Frame")
 	list.Name = "Drop_" .. name
-	list.Size = UDim2.new(1, 0, 0, #options * 32 + 8)
+	list.Size = UDim2.new(1, 0, 0, 0)
 	list.BackgroundTransparency = 1
 	list.ClipsDescendants = true
 	list.Visible = false
 	list.Parent = self._body
 	list.LayoutOrder = #self._body:GetChildren()
 	local panel = Instance.new("Frame")
-	panel.Size = UDim2.new(0, 190, 1, 0)
+	panel.Size = UDim2.new(0, 200, 1, 0)
 	panel.AnchorPoint = Vector2.new(1, 0)
 	panel.Position = UDim2.new(1, 0, 0, 0)
 	panel.BackgroundColor3 = Color3.fromRGB(13, 13, 16)
@@ -832,142 +839,345 @@ function Section:AddDropdown(opts)
 	corner(panel, 8)
 	stroke(panel, LINE, 0, 1)
 	win._glass(panel, 0.3)
-	local FULL_H = #options * 32 + 8
+	local ppad = Instance.new("UIPadding")
+	ppad.PaddingTop = UDim.new(0, 4)
+	ppad.PaddingBottom = UDim.new(0, 4)
+	ppad.PaddingLeft = UDim.new(0, 4)
+	ppad.PaddingRight = UDim.new(0, 4)
+	ppad.Parent = panel
+	local play = Instance.new("UIListLayout")
+	play.Padding = UDim.new(0, 4)
+	play.SortOrder = Enum.SortOrder.LayoutOrder
+	play.Parent = panel
+
+	-- optional search field, only worth it on long lists
+	local searchInput
+	if allowSearch then
+		local sbox = Instance.new("Frame")
+		sbox.Name = "SearchBox"
+		sbox.Size = UDim2.new(1, 0, 0, 26)
+		sbox.LayoutOrder = 1
+		sbox.BackgroundColor3 = BG_HOVER
+		sbox.BorderSizePixel = 0
+		sbox.Parent = panel
+		corner(sbox, 5)
+		makeIcon(sbox, "search", 11, ICON_FAINT, UDim2.new(0, 7, 0.5, -5))
+		searchInput = Instance.new("TextBox")
+		searchInput.Name = "Search"
+		searchInput.Size = UDim2.new(1, -26, 1, 0)
+		searchInput.Position = UDim2.new(0, 22, 0, 0)
+		searchInput.BackgroundTransparency = 1
+		searchInput.Font = Enum.Font.Gotham
+		searchInput.TextSize = 12
+		searchInput.TextXAlignment = Enum.TextXAlignment.Left
+		searchInput.TextColor3 = TXT_MAIN
+		searchInput.PlaceholderText = "Search"
+		searchInput.PlaceholderColor3 = TXT_FAINT
+		searchInput.Text = ""
+		searchInput.ClearTextOnFocus = false
+		searchInput.Parent = sbox
+		win:ThemeRegister(searchInput, "text")
+	end
+
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "Options"
+	scroll.Size = UDim2.new(1, 0, 0, 0)
+	scroll.LayoutOrder = 2
+	scroll.BackgroundTransparency = 1
+	scroll.BorderSizePixel = 0
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+	scroll.ScrollBarThickness = 2
+	scroll.ScrollBarImageColor3 = Color3.fromRGB(58, 58, 68)
+	scroll.ElasticBehavior = Enum.ElasticBehavior.Never
+	scroll.Parent = panel
+	local olay = Instance.new("UIListLayout")
+	olay.Padding = UDim.new(0, 2)
+	olay.SortOrder = Enum.SortOrder.LayoutOrder
+	olay.Parent = scroll
+
+	-- footer actions, only useful with multiple selection
+	local footer
+	if multiple then
+		footer = Instance.new("Frame")
+		footer.Name = "Footer"
+		footer.Size = UDim2.new(1, 0, 0, 22)
+		footer.LayoutOrder = 3
+		footer.BackgroundTransparency = 1
+		footer.Parent = panel
+		local function mkAction(text, order, fn)
+			local b = Instance.new("TextButton")
+			b.Size = UDim2.new(0.5, -2, 1, 0)
+			b.Position = UDim2.new(order == 1 and 0 or 0.5, order == 1 and 0 or 2, 0, 0)
+			b.BackgroundColor3 = BG_HOVER
+			b.BackgroundTransparency = 1
+			b.Font = Enum.Font.Gotham
+			b.TextSize = 11
+			b.TextColor3 = TXT_SOFT
+			b.Text = text
+			b.AutoButtonColor = false
+			b.Parent = footer
+			corner(b, 4)
+			b.MouseEnter:Connect(function()
+				TweenService:Create(b, TweenInfo.new(0.12), {BackgroundTransparency = 0, TextColor3 = win:_tc("text")}):Play()
+			end)
+			b.MouseLeave:Connect(function()
+				TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = 1, TextColor3 = win:_tc("sub")}):Play()
+			end)
+			b.MouseButton1Click:Connect(fn)
+			return b
+		end
+		local allBtn = mkAction("Select all", 1, function() end)
+		local noneBtn = mkAction("Clear", 2, function() end)
+		footer._all = allBtn
+		footer._none = noneBtn
+	end
+
+	local selected = {}
+	local current = nil
+	local close, obj
+	if multiple then
+		if type(opts.Default) == "table" then
+			for _, v in ipairs(opts.Default) do selected[tostring(v)] = true end
+		end
+	else
+		current = tostring(opts.Default or options[1] or "")
+	end
+	local filter = ""
+	local optBtns = {}
+
+	local function countSelected()
+		local n = 0
+		for _ in pairs(selected) do n = n + 1 end
+		return n
+	end
+
+	local function summary()
+		if not multiple then return tostring(current or "") end
+		local n = countSelected()
+		if n == 0 then return "None" end
+		if n == 1 then
+			for k in pairs(selected) do return k end
+		end
+		return n .. " selected"
+	end
+
+	local function refreshTrigger()
+		cur.Text = summary()
+	end
+
+	local function isSelected(o)
+		if multiple then return selected[o] == true end
+		return current == o
+	end
+
+	local function visibleOptions()
+		if filter == "" then return options end
+		local out = {}
+		local needle = string.lower(filter)
+		for _, o in ipairs(options) do
+			if string.find(string.lower(o), needle, 1, true) then table.insert(out, o) end
+		end
+		return out
+	end
+
+	local FULL_H = 0
+	local function measure()
+		local shown = #visibleOptions()
+		local rows = math.clamp(shown, 1, 8)
+		scroll.Size = UDim2.new(1, 0, 0, rows * 30 + math.max(0, shown - 1) * 2)
+		FULL_H = 8 + rows * 30 + math.max(0, rows - 1) * 2
+		if allowSearch then FULL_H = FULL_H + 30 end
+		if multiple then FULL_H = FULL_H + 26 end
+		if list.Visible then list.Size = UDim2.new(1, 0, 0, FULL_H) end
+	end
+
+	local function paint()
+		for _, o in pairs(optBtns) do
+			local sel = isSelected(o.name)
+			o.chk.Visible = sel
+			o.btn.TextColor3 = sel and win:_tc("text") or win:_tc("sub")
+			o.btn.BackgroundTransparency = sel and 0 or 1
+		end
+	end
+
+	local function pick(o)
+		if multiple then
+			if selected[o] then selected[o] = nil else selected[o] = true end
+			win._dirty = true
+			refreshTrigger()
+			paint()
+			clickSound(win._gui, function() return win._sounds end)
+			pcall(callback, obj:Get())
+			print(string.format("[ATHERIUM] dropdown '%s' -> %d selected", name, countSelected()))
+		else
+			current = o
+			win._dirty = true
+			refreshTrigger()
+			paint()
+			close()
+			clickSound(win._gui, function() return win._sounds end)
+			pcall(callback, o)
+			print(string.format("[ATHERIUM] dropdown '%s' -> %s", name, tostring(o)))
+		end
+	end
+
+	local function buildOptions()
+		for _, ch in ipairs(scroll:GetChildren()) do
+			if ch:IsA("TextButton") then ch:Destroy() end
+		end
+		for k in pairs(optBtns) do optBtns[k] = nil end
+		local shown = visibleOptions()
+		for oidx, opt in ipairs(shown) do
+			local b = Instance.new("TextButton")
+			b.Name = "Opt_" .. tostring(opt)
+			b.LayoutOrder = oidx
+			b.Size = UDim2.new(1, -2, 0, 30)
+			b.BackgroundColor3 = BG_HOVER
+			b.BackgroundTransparency = 1
+			b.Font = Enum.Font.Gotham
+			b.TextSize = 12
+			b.TextColor3 = TXT_DIM
+			b.TextXAlignment = Enum.TextXAlignment.Left
+			b.TextTruncate = Enum.TextTruncate.AtEnd
+			b.Text = tostring(opt)
+			b.AutoButtonColor = false
+			b.Parent = scroll
+			corner(b, 6)
+			local bpad = Instance.new("UIPadding")
+			bpad.PaddingLeft = UDim.new(0, 12)
+			bpad.PaddingRight = UDim.new(0, 26)
+			bpad.Parent = b
+			b.BackgroundTransparency = isSelected(opt) and 0 or 1
+			b.TextColor3 = isSelected(opt) and win:_tc("text") or win:_tc("sub")
+			b.MouseEnter:Connect(function()
+				TweenService:Create(b, TweenInfo.new(0.12), {BackgroundTransparency = 0}):Play()
+			end)
+			b.MouseLeave:Connect(function()
+				TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = isSelected(opt) and 0 or 1}):Play()
+			end)
+			local chk = makeIcon(b, "check", 12, TXT_MAIN, UDim2.new(1, -22, 0.5, -6))
+			chk.Visible = isSelected(opt)
+			optBtns[opt] = { btn = b, chk = chk, name = opt }
+			b.MouseButton1Click:Connect(function() pick(opt) end)
+		end
+		measure()
+	end
+
 	local anim = nil
 	local function open()
 		if anim then anim:Cancel() end
+		if searchInput then searchInput.Text = "" end
+		filter = ""
+		buildOptions()
 		list.Visible = true
 		list.Size = UDim2.new(1, 0, 0, 0)
 		TweenService:Create(chev, TweenInfo.new(0.2), {Rotation = 180}):Play()
-		anim = TweenService:Create(list, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, FULL_H)})
+		anim = TweenService:Create(list, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, FULL_H)})
 		anim:Play()
 	end
-	local function close()
+	close = function()
 		if anim then anim:Cancel() end
 		TweenService:Create(chev, TweenInfo.new(0.15), {Rotation = 0}):Play()
-		anim = TweenService:Create(list, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)})
+		anim = TweenService:Create(list, TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)})
 		local mine = anim
 		mine.Completed:Connect(function()
-			if anim == mine then
-				list.Visible = false
-			end
+			if anim == mine then list.Visible = false end
 		end)
 		anim:Play()
 	end
 	table.insert(win._dropLists, { list = list, chev = chev })
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0, 4)
-	pad.PaddingBottom = UDim.new(0, 4)
-	pad.PaddingLeft = UDim.new(0, 4)
-	pad.PaddingRight = UDim.new(0, 4)
-	pad.Parent = panel
-	local lay = Instance.new("UIListLayout")
-	lay.Padding = UDim.new(0, 2)
-	lay.SortOrder = Enum.SortOrder.LayoutOrder
-	lay.Parent = panel
 
-	local current = default
-	local optBtns = {}
-	local function buildOptions()
-		for _, ch in ipairs(panel:GetChildren()) do
-			if ch:IsA("TextButton") then ch:Destroy() end
-		end
-		for k in pairs(optBtns) do optBtns[k] = nil end
-	for oidx, opt in ipairs(options) do
-		local b = Instance.new("TextButton")
-		b.LayoutOrder = oidx
-		b.Size = UDim2.new(1, 0, 0, 30)
-		b.BackgroundColor3 = BG_HOVER
-		b.BackgroundTransparency = 1
-		b.Font = Enum.Font.Gotham
-		b.TextSize = 12
-		b.TextColor3 = TXT_DIM
-		b.TextXAlignment = Enum.TextXAlignment.Left
-		b.Text = tostring(opt)
-		b.AutoButtonColor = false
-		b.Parent = panel
-		corner(b, 6)
-		local bpad = Instance.new("UIPadding")
-		bpad.PaddingLeft = UDim.new(0, 12)
-		bpad.Parent = b
-		b.BackgroundTransparency = (opt == current) and 0 or 1
-		b.MouseEnter:Connect(function()
-			TweenService:Create(b, TweenInfo.new(0.12), {BackgroundTransparency = 0}):Play()
+	if searchInput then
+		searchInput:GetPropertyChangedSignal("Text"):Connect(function()
+			filter = searchInput.Text or ""
+			buildOptions()
 		end)
-		b.MouseLeave:Connect(function()
-			TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = (current == opt) and 0 or 1}):Play()
+		searchInput.FocusLost:Connect(function(enter)
+			if not enter then return end
+			local shown = visibleOptions()
+			if shown[1] then pick(shown[1]) end
 		end)
-		local chk = makeIcon(b, "check", 12, TXT_MAIN, UDim2.new(1, -24, 0.5, -6))
-		chk.Visible = (opt == current)
-		optBtns[opt] = { btn = b, chk = chk }
-		b.MouseButton1Click:Connect(function()
-			current = opt
+	end
+
+	if footer then
+		footer._all.MouseButton1Click:Connect(function()
+			for _, o in ipairs(options) do selected[o] = true end
 			win._dirty = true
-			cur.Text = tostring(opt)
-			close()
-			for oname, o in pairs(optBtns) do
-				local sel = (oname == opt)
-				o.chk.Visible = sel
-				o.btn.TextColor3 = (sel and win:_tc("text") or win:_tc("sub"))
-				o.btn.BackgroundTransparency = sel and 0 or 1
-			end
-			clickSound(win._gui, function() return win._sounds end)
-			pcall(callback, opt)
-			print(string.format("[ATHERIUM] dropdown '%s' -> %s", name, tostring(opt)))
+			refreshTrigger()
+			buildOptions()
+			pcall(callback, obj:Get())
+		end)
+		footer._none.MouseButton1Click:Connect(function()
+			selected = {}
+			win._dirty = true
+			refreshTrigger()
+			buildOptions()
+			pcall(callback, obj:Get())
 		end)
 	end
-	end
-	buildOptions()
-	if optBtns[current] then
-		optBtns[current].btn.TextColor3 = TXT_MAIN
-		optBtns[current].btn.BackgroundTransparency = 0
-		optBtns[current].chk.Visible = true
-	end
+
 	local function toggleList()
-		if list.Visible then
-			close()
-		else
-			open()
-		end
+		if list.Visible then close() else open() end
 	end
 	row.MouseButton1Click:Connect(toggleList)
 	trigger.MouseButton1Click:Connect(toggleList)
-	local obj = {}
-	function obj:Get() return current end
-	function obj:Set(v, fire)
-		if v == nil or optBtns[v] == nil then return end
-		current = v
-		cur.Text = tostring(v)
-		for oname, o in pairs(optBtns) do
-			local sel = (oname == v)
-			o.chk.Visible = sel
-			o.btn.TextColor3 = (sel and win:_tc("text") or win:_tc("sub"))
-			o.btn.BackgroundTransparency = sel and 0 or 1
+
+	obj = {}
+	function obj:Get()
+		if not multiple then return current end
+		local out = {}
+		for _, o in ipairs(options) do
+			if selected[o] then table.insert(out, o) end
 		end
-		if fire ~= false then pcall(callback, v) end
+		return out
+	end
+	function obj:Set(v, fire)
+		if multiple then
+			selected = {}
+			if type(v) == "table" then
+				for _, x in ipairs(v) do selected[tostring(x)] = true end
+			elseif v ~= nil then
+				selected[tostring(v)] = true
+			end
+			if fire then win._dirty = true end
+			refreshTrigger()
+			if list.Visible then buildOptions() else measure() end
+			if fire ~= false then pcall(callback, obj:Get()) end
+			return
+		end
+		local key = tostring(v)
+		if v == nil or not table.find(options, key) then return end
+		current = key
+		refreshTrigger()
+		if list.Visible then buildOptions() else measure() end
+		if fire ~= false then pcall(callback, key) end
 	end
 	function obj:SetOptions(newOpts)
-		options = newOpts or {}
+		options = {}
+		for i, o in ipairs(newOpts or {}) do options[i] = tostring(o) end
+		if multiple then
+			local keep = {}
+			for _, o in ipairs(options) do
+				if selected[o] then keep[o] = true end
+			end
+			selected = keep
+		else
+			if not table.find(options, tostring(current)) then current = options[1] or "" end
+		end
+		refreshTrigger()
 		buildOptions()
-		if optBtns[current] == nil then
-			current = options[1]
-		end
-		cur.Text = tostring(current)
-		for oname, o in pairs(optBtns) do
-			local sel = (oname == current)
-			o.chk.Visible = sel
-			o.btn.TextColor3 = (sel and win:_tc("text") or win:_tc("sub"))
-			o.btn.BackgroundTransparency = sel and 0 or 1
-		end
-		FULL_H = #options * 32 + 8
-		if list.Visible then
-			list.Size = UDim2.new(1, 0, 0, FULL_H)
-		end
 	end
+	function obj:IsMultiple() return multiple end
+	function obj:Open() if not list.Visible then open() end end
+	function obj:Close() if list.Visible then close() end end
+	refreshTrigger()
+	measure()
 	if not opts.NoSave then
 		table.insert(win._cfg, { kind = "dropdown", tab = self._tab._name, sec = self._title or "?", name = name, get = function() return obj:Get() end, set = function(v) obj:Set(v, true) end })
 	end
-	pcall(callback, default)
+	pcall(callback, obj:Get())
 	return obj
 end
 
@@ -989,6 +1199,7 @@ function Section:AddTextBox(opts)
 	corner(row, 6)
 	hoverRow(row)
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -170, 1, 0)
@@ -1059,6 +1270,7 @@ function Section:AddColorPicker(opts)
 	corner(row, 6)
 	hoverRow(row)
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -56, 1, 0)
@@ -1602,6 +1814,7 @@ function Section:AddViewport(opts)
 	row.Parent = self._body
 	row.LayoutOrder = #self._body:GetChildren()
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, -110, 0, 20)
@@ -2009,6 +2222,7 @@ function Section:AddChart(opts)
 	row.Parent = self._body
 	row.LayoutOrder = #self._body:GetChildren()
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, -110, 0, headH)
@@ -3133,6 +3347,7 @@ function Section:AddKeybind(opts)
 	corner(row, 6)
 	hoverRow(row)
 	win._registerRow(row, name, self)
+	if opts.Tooltip then win:_attachTip(row, opts.Tooltip) end
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -90, 1, 0)
@@ -3948,58 +4163,267 @@ function VibeUI:CreateWindow(opts)
 	nlay.Padding = UDim.new(0, 8)
 	nlay.Parent = notifyLayer
 	win._notifyLayer = notifyLayer
+	win._notifyQueue = {}
+	win._notifyLive = 0
+	win._notifyMax = tonumber(opts.NotifyLimit) or 4
+	win._notifySeq = 0
 
-	function win:Notify(ntitle, ntext, ndur)
-		ndur = ndur or 3
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 60)
+	-- tooltips: one bubble shared by every control, attached on demand
+	local tipLayer = Instance.new("Frame")
+	tipLayer.Name = "TipLayer"
+	tipLayer.Size = UDim2.new(1, 0, 1, 0)
+	tipLayer.BackgroundTransparency = 1
+	tipLayer.ZIndex = 60
+	tipLayer.Parent = gui
+	local tip = Instance.new("Frame")
+	tip.Name = "Tooltip"
+	tip.AutomaticSize = Enum.AutomaticSize.XY
+	tip.BackgroundColor3 = Color3.fromRGB(14, 14, 17)
+	tip.BorderSizePixel = 0
+	tip.Visible = false
+	tip.ZIndex = 61
+	tip.Parent = tipLayer
+	corner(tip, 6)
+	stroke(tip, Color3.fromRGB(48, 48, 58), 0, 1)
+	local tipPad = Instance.new("UIPadding")
+	tipPad.PaddingTop = UDim.new(0, 6)
+	tipPad.PaddingBottom = UDim.new(0, 6)
+	tipPad.PaddingLeft = UDim.new(0, 9)
+	tipPad.PaddingRight = UDim.new(0, 9)
+	tipPad.Parent = tip
+	local tipTxt = Instance.new("TextLabel")
+	tipTxt.Name = "Text"
+	tipTxt.Size = UDim2.new(0, 0, 0, 0)
+	tipTxt.AutomaticSize = Enum.AutomaticSize.XY
+	tipTxt.BackgroundTransparency = 1
+	tipTxt.Font = Enum.Font.Gotham
+	tipTxt.TextSize = 12
+	tipTxt.TextWrapped = true
+	tipTxt.TextColor3 = Color3.fromRGB(228, 228, 236)
+	tipTxt.TextXAlignment = Enum.TextXAlignment.Left
+	tipTxt.TextYAlignment = Enum.TextYAlignment.Top
+	tipTxt.Text = ""
+	tipTxt.ZIndex = 62
+	tipTxt.Parent = tip
+	local tipLimit = Instance.new("UISizeConstraint")
+	tipLimit.MaxSize = Vector2.new(230, 180)
+	tipLimit.Parent = tipTxt
+
+	function win:_attachTip(target, text)
+		if not text or text == "" then return end
+		local token = 0
+		local function hide()
+			token = token + 1
+			tip.Visible = false
+		end
+		local function place()
+			local base = tipLayer.AbsolutePosition
+			local tp = target.AbsolutePosition - base
+			local ts = target.AbsoluteSize
+			local tw, th = tip.AbsoluteSize.X, tip.AbsoluteSize.Y
+			local vw = tipLayer.AbsoluteSize.X
+			local x = tp.X + ts.X * 0.5 - tw * 0.5
+			x = math.clamp(x, 6, math.max(6, vw - tw - 6))
+			local y = tp.Y - th - 8
+			if y < 6 then y = tp.Y + ts.Y + 8 end
+			tip.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
+		end
+		local function show()
+			token = token + 1
+			local mine = token
+			tipTxt.Text = tostring(text)
+			tip.Visible = true
+			task.spawn(function()
+				RunService.Heartbeat:Wait()
+				if mine == token and tip.Visible then place() end
+			end)
+		end
+		local hoverToken = 0
+		target.MouseEnter:Connect(function()
+			hoverToken = hoverToken + 1
+			local mine = hoverToken
+			task.delay(0.35, function()
+				if mine == hoverToken and target.Parent then show() end
+			end)
+		end)
+		target.MouseLeave:Connect(function()
+			hoverToken = hoverToken + 1
+			hide()
+		end)
+		local pressToken = 0
+		target.InputBegan:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.Touch then return end
+			pressToken = pressToken + 1
+			local mine = pressToken
+			task.delay(0.45, function()
+				if mine == pressToken and target.Parent then show() end
+			end)
+		end)
+		target.InputEnded:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.Touch then return end
+			pressToken = pressToken + 1
+			hide()
+		end)
+	end
+
+	local NOTIFY_ICONS = { info = "bell", success = "check", warn = "alert-triangle", error = "x" }
+	local buildNotify
+
+	local function pumpNotify()
+		while win._notifyLive < win._notifyMax and #win._notifyQueue > 0 do
+			local job = table.remove(win._notifyQueue, 1)
+			if not job.cancel then
+				win._notifyLive = win._notifyLive + 1
+				buildNotify(job)
+			end
+		end
+	end
+
+	buildNotify = function(job)
+		win._notifySeq = win._notifySeq + 1
+		local kind = job.kind or "info"
+		local card = Instance.new("TextButton")
+		card.Name = "Notify"
+		card.Size = UDim2.new(1, 0, 0, 0)
+		card.AutomaticSize = Enum.AutomaticSize.Y
 		card.BackgroundColor3 = BG_CARD
-		card.BorderSizePixel = 0
-		card.LayoutOrder = #notifyLayer:GetChildren()
+		card.BackgroundTransparency = 1
+		card.AutoButtonColor = false
+		card.Text = ""
+		card.LayoutOrder = win._notifySeq
 		card.Parent = notifyLayer
 		corner(card, 10)
 		stroke(card, LINE, 0, 1)
 		win._glass(card, 0.3)
-		local bar = Instance.new("Frame")
-		bar.Size = UDim2.new(0, 2, 1, -16)
-		bar.Position = UDim2.new(0, 8, 0, 8)
-		bar.BackgroundColor3 = win._accent
-		bar.BorderSizePixel = 0
-		bar.Parent = card
-		corner(bar, 1)
-		win._reg(function(c) bar.BackgroundColor3 = c end)
-		makeIcon(card, "bell", 14, ICON_DIM, UDim2.new(0, 18, 0, 10))
+
+		local rail = Instance.new("Frame")
+		rail.Size = UDim2.new(0, 2, 1, -20)
+		rail.Position = UDim2.new(0, 7, 0, 10)
+		rail.BackgroundColor3 = win._accent
+		rail.BorderSizePixel = 0
+		rail.Parent = card
+		corner(rail, 1)
+		win._reg(function(c) rail.BackgroundColor3 = c end)
+
+		local icon = makeIcon(card, NOTIFY_ICONS[kind] or "bell", 14, ICON_DIM, UDim2.new(0, 16, 0, 11))
+
+		local content = Instance.new("Frame")
+		content.Name = "Content"
+		content.Size = UDim2.new(1, -40, 0, 0)
+		content.Position = UDim2.new(0, 38, 0, 0)
+		content.AutomaticSize = Enum.AutomaticSize.Y
+		content.BackgroundTransparency = 1
+		content.Parent = card
+		local cpad = Instance.new("UIPadding")
+		cpad.PaddingTop = UDim.new(0, 10)
+		cpad.PaddingBottom = UDim.new(0, 11)
+		cpad.PaddingRight = UDim.new(0, 12)
+		cpad.Parent = content
+		local clay = Instance.new("UIListLayout")
+		clay.Padding = UDim.new(0, 3)
+		clay.SortOrder = Enum.SortOrder.LayoutOrder
+		clay.Parent = content
+
 		local t = Instance.new("TextLabel")
-		t.Size = UDim2.new(1, -44, 0, 20)
-		t.Position = UDim2.new(0, 40, 0, 8)
+		t.Size = UDim2.new(1, 0, 0, 17)
 		t.BackgroundTransparency = 1
 		t.Font = Enum.Font.GothamBold
 		t.TextSize = 13
 		t.TextXAlignment = Enum.TextXAlignment.Left
+		t.TextTruncate = Enum.TextTruncate.AtEnd
 		t.TextColor3 = TXT_MAIN
-		t.Text = tostring(ntitle)
-		t.Parent = card
+		t.Text = tostring(job.title)
+		t.Parent = content
 		win:ThemeRegister(t, "text")
+
 		local d = Instance.new("TextLabel")
-		d.Size = UDim2.new(1, -44, 0, 20)
-		d.Position = UDim2.new(0, 40, 0, 28)
+		d.Size = UDim2.new(1, 0, 0, 0)
+		d.AutomaticSize = Enum.AutomaticSize.Y
 		d.BackgroundTransparency = 1
 		d.Font = Enum.Font.Gotham
 		d.TextSize = 12
+		d.TextWrapped = true
 		d.TextXAlignment = Enum.TextXAlignment.Left
+		d.TextYAlignment = Enum.TextYAlignment.Top
 		d.TextColor3 = TXT_DIM
-		d.Text = tostring(ntext)
-		d.Parent = card
+		d.Text = tostring(job.text)
+		d.Parent = content
 		win:ThemeRegister(d, "sub")
-		card.Position = UDim2.new(1, 20, 0, 0)
-		card.BackgroundTransparency = 1
-		win:ApplyTheme(card)
-		TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0}):Play()
-		task.delay(ndur, function()
-			if not card.Parent then return end
-			local tw = TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 20, 0, 0), BackgroundTransparency = 1})
-			tw:Play() tw.Completed:Wait() card:Destroy()
-		end)
+
+		local life = Instance.new("Frame")
+		life.Name = "Life"
+		life.AnchorPoint = Vector2.new(0, 1)
+		life.Position = UDim2.new(0, 10, 1, -4)
+		life.Size = UDim2.new(1, -20, 0, 1)
+		life.BackgroundColor3 = win._accent
+		life.BackgroundTransparency = 0.55
+		life.BorderSizePixel = 0
+		life.Parent = card
+		win._reg(function(c) life.BackgroundColor3 = c end)
+
+		local closed = false
+		local function dismiss()
+			if closed then return end
+			closed = true
+			if life.Parent then life:Destroy() end
+			TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 1,
+			}):Play()
+			TweenService:Create(t, TweenInfo.new(0.16), {TextTransparency = 1}):Play()
+			TweenService:Create(d, TweenInfo.new(0.16), {TextTransparency = 1}):Play()
+			pcall(function()
+				TweenService:Create(icon, TweenInfo.new(0.16), {ImageTransparency = 1}):Play()
+			end)
+			task.delay(0.22, function()
+				if card.Parent then card:Destroy() end
+				win._notifyLive = math.max(0, win._notifyLive - 1)
+				pumpNotify()
+			end)
+		end
+		job.close = dismiss
+		card.MouseButton1Click:Connect(dismiss)
+
+		TweenService:Create(card, TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			BackgroundTransparency = 0,
+		}):Play()
+		if job.dur and job.dur > 0 then
+			TweenService:Create(life, TweenInfo.new(job.dur, Enum.EasingStyle.Linear), {
+				Size = UDim2.new(0, 0, 0, 1),
+			}):Play()
+			task.delay(job.dur, dismiss)
+		end
+		if job.onClose then job.onClose(dismiss) end
+	end
+
+	function win:Notify(ntitle, ntext, ndur, kind)
+		local job
+		if type(ntitle) == "table" then
+			local o = ntitle
+			job = {
+				title = o.Title or o[1] or "",
+				text = o.Text or o[2] or "",
+				dur = tonumber(o.Duration or o[3]) or 3.5,
+				kind = o.Kind or o[4] or "info",
+			}
+		else
+			job = {
+				title = ntitle or "",
+				text = ntext or "",
+				dur = tonumber(ndur) or 3.5,
+				kind = kind or "info",
+			}
+		end
+		local handle = {}
+		function handle:Close()
+			if job.close then
+				job.close()
+			else
+				job.cancel = true
+			end
+		end
+		table.insert(win._notifyQueue, job)
+		pumpNotify()
+		return handle
 	end
 
 	-- splash
@@ -4527,19 +4951,37 @@ function VibeUI:CreateWindow(opts)
 		TweenService:Create(searchIcon, TweenInfo.new(0.25), {ImageColor3 = ICON_FAINT}):Play()
 	end)
 
-	-- tabs holder
-	local tabsHolder = Instance.new("Frame")
+	-- tabs holder: scrolls once the list is taller than the sidebar, so a hub
+	-- with 12 tabs never pushes into the profile card
+	local tabsHolder = Instance.new("ScrollingFrame")
 	tabsHolder.Name = "TabsHolder"
 	tabsHolder.Size = UDim2.new(1, -16, 1, -108)
 	tabsHolder.Position = UDim2.new(0, 8, 0, 46)
 	tabsHolder.BackgroundTransparency = 1
+	tabsHolder.BorderSizePixel = 0
+	tabsHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabsHolder.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	tabsHolder.ScrollingDirection = Enum.ScrollingDirection.Y
+	tabsHolder.ScrollBarThickness = 2
+	tabsHolder.ScrollBarImageColor3 = Color3.fromRGB(58, 58, 68)
+	tabsHolder.ScrollBarImageTransparency = 0.35
+	tabsHolder.ElasticBehavior = Enum.ElasticBehavior.Never
 	tabsHolder.Parent = strip
 	local stripLay = Instance.new("UIListLayout")
 	stripLay.FillDirection = Enum.FillDirection.Vertical
 	stripLay.SortOrder = Enum.SortOrder.LayoutOrder
 	stripLay.Padding = UDim.new(0, 6)
 	stripLay.Parent = tabsHolder
+	local stripPad = Instance.new("UIPadding")
+	stripPad.PaddingTop = UDim.new(0, 2)
+	stripPad.PaddingBottom = UDim.new(0, 6)
+	stripPad.PaddingRight = UDim.new(0, 6)
+	stripPad.Parent = tabsHolder
 	win._tabsHolder = tabsHolder
+	win._tabsScroll = function(dy)
+		local maxY = math.max(0, tabsHolder.AbsoluteCanvasSize.Y - tabsHolder.AbsoluteSize.Y)
+		tabsHolder.CanvasPosition = Vector2.new(0, math.clamp(tabsHolder.CanvasPosition.Y + dy, 0, maxY))
+	end
 	win._glass(strip, 0.26)
 
 	-- profile pinned to sidebar bottom (clickable, opens profile card)
@@ -6677,13 +7119,16 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v9.5 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.0 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
 	w:AddLabel("Atherium base. Every control below is live.")
-	w:AddButton({ Name = "Test Notification", Icon = "bell", Callback = function()
-		VibeUI.Notify(win, "Vibe", "Button works")
+	w:AddButton({ Name = "Test Notification", Icon = "bell", Tooltip = "Shows all four notification kinds", Callback = function()
+		win:Notify("Info", "Notifications now size themselves to the text.", 3.5, "info")
+		win:Notify("Saved", "Config written to disk.", 3.5, "success")
+		win:Notify("Warning", "Acrylic is off on this device.", 4, "warn")
+		win:Notify("Error", "Load failed, check the console.", 4, "error")
 	end })
 	w:AddButton({ Name = "Print Hello", Icon = "zap", Callback = function()
 		print("[ATHERIUM] hello from button")
@@ -6693,16 +7138,24 @@ local function buildDemo()
 	local tgt = combat:AddSection("Targeting", "crosshair")
 	local tgtL, tgtR = tgt:AddColumns()
 	local aimbotT = tgtL:AddToggle({ Name = "Enable Aimbot", Default = false, Callback = function(v) end })
-	tgtL:AddToggle({ Name = "Team Check", Default = true, Callback = function(v) end })
+	tgtL:AddToggle({ Name = "Team Check", Default = true, Tooltip = "Skips players on your own team", Callback = function(v) end })
 	tgtL:AddToggle({ Name = "Wall Check", Default = true, Callback = function(v) end })
 	tgtR:AddDropdown({ Name = "Aim Part", Options = { "Head", "Torso", "Random" }, Default = "Head", Callback = function(v) end })
 	tgtR:AddKeybind({ Name = "Aim Key", Default = Enum.KeyCode.E, Toggle = aimbotT, Callback = function(k) end })
 	local adj = combat:AddSection("Adjustments", "sliders-horizontal")
 	local adjL, adjR = adj:AddColumns()
-	adjL:AddSlider({ Name = "FOV Radius", Min = 10, Max = 400, Default = 120, Callback = function(v) end })
+	adjL:AddSlider({ Name = "FOV Radius", Min = 10, Max = 400, Default = 120, Tooltip = "Radius of the target circle, in pixels", Callback = function(v) end })
 	adjL:AddSlider({ Name = "Smoothness", Min = 1, Max = 30, Default = 8, Callback = function(v) end })
 	adjR:AddColorPicker({ Name = "FOV Color", Default = Color3.fromRGB(255, 255, 255), Callback = function(c) end })
 	adjR:AddDropdown({ Name = "Mode", Options = { "Legit", "Rage", "Silent" }, Default = "Legit", Callback = function(v) end })
+	adjR:AddDropdown({
+		Name = "Hit Parts",
+		Options = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg", "Upper Torso", "Lower Torso" },
+		Default = { "Head", "Torso" },
+		Multiple = true,
+		Tooltip = "Select any number of body parts",
+		Callback = function(list) end,
+	})
 
 	local move = win:AddTab("Move", "wind")
 	local m1 = move:AddSection("Movement", "gauge")
@@ -6819,7 +7272,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v9.5 built")
+	print("[ATHERIUM] demo v10.0 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)

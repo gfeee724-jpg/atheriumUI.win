@@ -67,8 +67,10 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 | `Acrylic` | boolean | `true` | camera-tracked DoF/glass under the main window |
 | `Autosave` | boolean | `false` | periodic `SaveConfig` of dirty state |
 | `AutosaveInterval` | number | `30` | seconds, clamped to 5..600 |
+| `NotifyLimit` | number | `4` | max visible toasts, the rest queue |
 
 Window is draggable, resizable (`500x540` .. `860x800`), toggled with `RightShift`.
+The sidebar tab list scrolls once it no longer fits above the profile card.
 
 ---
 
@@ -83,13 +85,29 @@ local tab = win:AddTab("Main", "house")
 | --- | --- |
 | `win:AddTab(name, icon)` | adds a sidebar tab, returns `Tab` |
 | `win:Toggle()` | shows/hides the window (same as the RightShift bind) |
-| `win:Notify(title, text, dur)` | toast in the window corner, `dur` seconds (default 3) |
+| `win:Notify(title, text, dur, kind)` | toast in the window corner, see below |
 | `win:SetAccent(color)` | live accent change |
 | `win:SetAcrylic(on)` | enables/disables the blur stack |
 | `win:CreatePanel(opts)` | floating panel: `{Title, Icon, Width}`, returns `{frame, body}` |
 | `win:CreateKeyList()` | floating keybind list, auto-refreshes from `AddKeybind` controls |
 | `win:CreateWatermark(opts)` | floating watermark, see below |
 | `win:SetWatermarkVisible(bool)` | show/hide the watermark |
+
+### Notify
+
+```lua
+win:Notify("Saved", "Config written to disk.", 3.5, "success")
+
+local n = win:Notify({ Title = "Error", Text = "Load failed.", Duration = 4, Kind = "error" })
+n:Close() -- dismiss early
+```
+
+`Kind` is one of `info` (default), `success`, `warn`, `error` and only changes
+the leading icon. Cards size themselves to the wrapped text, stack upward, and
+queue once more than `NotifyLimit` (a `CreateWindow` option, default 4) are on
+screen. Clicking a card dismisses it; the thin bar under the text is a life bar
+for `Duration` seconds. `Duration = 0` keeps the card up until clicked. The
+returned handle exposes `:Close()`.
 
 Theme:
 
@@ -125,6 +143,10 @@ Configs (files live in `Atherium/Configs`):
 
 Every `Add*` returns a control object. All controls are saved/restored by name
 inside their tab/section unless `NoSave = true`.
+
+Every control also accepts `Tooltip = "text"`. Hovering the row for 0.35s (or
+holding it 0.45s on touch) shows one shared bubble above the row; when there is
+no room above it flips below. The bubble is capped at 230x180 and wraps.
 
 ### AddToggle
 
@@ -170,6 +192,34 @@ local dd = section:AddDropdown({ Name = "Mode", Options = { "Legit", "Rage" },
     Default = "Legit", NoSave = false, Callback = function(v) end })
 dd:Get() ; dd:Set("Rage") ; dd:SetOptions({ "A", "B", "C" })
 ```
+
+Single-select is unchanged: `Get()` returns the string, `Set` fires the callback
+unless you pass `false` as the second argument.
+
+Multi-select:
+
+```lua
+local parts = section:AddDropdown({
+    Name = "Hit Parts",
+    Options = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" },
+    Default = { "Head", "Torso" },
+    Multiple = true,
+    Callback = function(list) print(#list) end,
+})
+parts:IsMultiple() -- true
+parts:Get()        -- { "Head", "Torso" }, in Options order
+parts:Set({ "Head", "Left Leg" })
+parts:Open() ; parts:Close()
+```
+
+With `Multiple = true` the panel grows a `Select all` / `Clear` footer and the
+trigger summarises the selection (`None`, the single name, or `3 selected`).
+Unknown names passed to `Set` are ignored, and `SetOptions` drops selections
+that no longer exist.
+
+Lists longer than six options get a search field automatically (type to filter,
+Enter picks the first match); pass `Search = false` to suppress it. The option
+list scrolls past eight rows, so a long list never runs off the window.
 
 ### AddTextBox
 
