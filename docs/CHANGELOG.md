@@ -1,7 +1,13 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `10.3`;
+All notable changes to Atherium UI. Newest first. The current build is `10.4`;
 `VibeUI.Version` matches the newest entry.
+
+## 10.4
+
+- Swatch checker dropped from 4px to 3px with a much flatter pair of greys, so a
+  fully transparent chip reads as a soft dark tile instead of a chess board.
+  `checkerFill` takes an optional tint, which the strip still uses at full contrast.
 
 ## 10.3
 

@@ -42,7 +42,7 @@ if not check("compile", function()
 	assert(type(VibeUI.CreateWindow) == "function", "CreateWindow missing")
 end) then return end
 
-local EXPECTED = "10.3" -- bump together with VibeUI.Version
+local EXPECTED = "10.4" -- bump together with VibeUI.Version
 
 check("version", function()
 	assert(VibeUI.Version, "Version missing")
