@@ -95,15 +95,20 @@ performance work land on `main` continuously, and every release is documented in
 [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 - Check `VibeUI.Version` after loading; the current build is `10.5`.
-- Raw links sit behind a CDN cache for a few minutes after a push, so if a
-  control looks older than the changelog, re-fetch with a cache buster.
+- GitHub raw caches by path and ignores query strings, so right after a push it can
+  keep serving the previous build for a few minutes. If the version looks stale,
+  load the same file through jsDelivr pinned to a commit - that URL is immutable
+  and never lies about its contents.
 
 ```lua
-local URL = "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/VibeUI.lua"
-writefile("VibeUI.lua", game:HttpGet(URL .. "?v=" .. tostring(os.time())))
+-- always current: main, may lag a few minutes behind a push
+local MAIN = "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/heads/main/VibeUI.lua"
 
-local VibeUI = loadstring(readfile("VibeUI.lua"))()
-assert(VibeUI.Version == "10.5", "stale VibeUI.lua, re-download it")
+-- immutable: pinned to a commit, never stale
+local PIN = "https://cdn.jsdelivr.net/gh/gfeee724-jpg/atheriumUI.win@a649e05/VibeUI.lua"
+
+local VibeUI = loadstring(game:HttpGet(PIN))()
+print("Version:", VibeUI.Version) -- 10.5
 ```
 
 ## Telegram
