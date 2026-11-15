@@ -1,4 +1,4 @@
---// ATHERIUM v10.2 | fine checker under the colour chip, rounder swatch
+--// ATHERIUM v10.3 | rounded colour chip on both layers
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "10.2"
+VibeUI.Version = "10.3"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -1322,8 +1322,8 @@ function Section:AddColorPicker(opts)
 	swWrap.BorderSizePixel = 0
 	swWrap.ClipsDescendants = true
 	swWrap.Parent = row
-	corner(swWrap, 6)
-	checkerFill(swWrap, 20, 18, 4, 6, 1)
+	corner(swWrap, 7)
+	checkerFill(swWrap, 20, 18, 4, 7, 1)
 
 	local sw = Instance.new("TextButton")
 	sw.Name = "Fill"
@@ -1334,7 +1334,8 @@ function Section:AddColorPicker(opts)
 	sw.AutoButtonColor = false
 	sw.ZIndex = 2
 	sw.Parent = swWrap
-	stroke(swWrap, Color3.fromRGB(255, 255, 255), 0.85, 1)
+	corner(sw, 7)
+	stroke(sw, Color3.fromRGB(255, 255, 255), 0.85, 1)
 
 	local h, s, v = rgbToHsv(default)
 	local color = default
@@ -1579,8 +1580,8 @@ function Section:AddColorPicker(opts)
 		chip.BorderSizePixel = 0
 		chip.ClipsDescendants = true
 		zw(chip).Parent = popup
-		corner(chip, 6)
-		checkerFill(chip, 24, 20, 4, 6, Z)
+		corner(chip, 7)
+		checkerFill(chip, 24, 20, 4, 7, Z)
 		local chipFill = Instance.new("Frame")
 		chipFill.Name = "Fill"
 		chipFill.Size = UDim2.new(1, 0, 1, 0)
@@ -1588,7 +1589,8 @@ function Section:AddColorPicker(opts)
 		chipFill.BackgroundTransparency = transp
 		chipFill.BorderSizePixel = 0
 		zw(chipFill, Z + 1).Parent = chip
-		stroke(chip, Color3.fromRGB(255, 255, 255), 0.8, 1)
+		corner(chipFill, 7)
+		stroke(chipFill, Color3.fromRGB(255, 255, 255), 0.8, 1)
 
 		local hexBox = Instance.new("TextBox")
 		hexBox.Size = UDim2.new(1, -44, 0, 20)
@@ -7177,7 +7179,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.2 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.3 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7330,7 +7332,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v10.2 built")
+	print("[ATHERIUM] demo v10.3 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)

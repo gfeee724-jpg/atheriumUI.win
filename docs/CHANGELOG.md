@@ -1,7 +1,15 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `10.2`;
+All notable changes to Atherium UI. Newest first. The current build is `10.3`;
 `VibeUI.Version` matches the newest entry.
+
+## 10.3
+
+- Swatch corners are rounded on the fill itself, not only on the container.
+  The fill draws in a higher `ZIndex` pass, so the container's rounded clip
+  never reached it and the chip rendered as a hard square. The wrap, the fill
+  and the popup chip now all carry a 7px radius, and the 1px hairline rides the
+  fill so the border follows the same curve.
 
 ## 10.2
 
