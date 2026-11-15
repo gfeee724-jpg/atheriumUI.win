@@ -1,4 +1,4 @@
---// ATHERIUM v10.5 | CanvasGroup mask on every checker layer
+--// ATHERIUM v11.0 | config profiles, share codes, clip-free checker
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "10.5"
+VibeUI.Version = "11.0"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -96,26 +96,46 @@ local function stroke(inst, color, transp, thick)
 	return s
 end
 
+-- only the tiles that sit fully inside the rounded rect are drawn, so the
+-- silhouette always comes from the parent's own UICorner. No clipping, no
+-- CanvasGroup, nothing that can poke a square corner through the curve.
+local function insideRoundRect(x, y, w, h, r)
+	if not r or r <= 0 then return true end
+	local px, py = math.min(x, w - x), math.min(y, h - y)
+	if px >= r or py >= r then return true end
+	local dx, dy = r - px, r - py
+	return dx * dx + dy * dy <= r * r
+end
+
 local function checkerFill(parent, maxW, maxH, cell, radius, z, tint)
 	cell = cell or 6
-	local holder = Instance.new("CanvasGroup")
+	radius = radius or 0
+	local holder = Instance.new("Frame")
 	holder.Name = "Checker"
 	holder.Size = UDim2.new(1, 0, 1, 0)
-	holder.BackgroundColor3 = Color3.fromRGB(44, 44, 52)
+	holder.BackgroundTransparency = 1
 	holder.BorderSizePixel = 0
 	holder.Parent = parent
-	if radius then corner(holder, radius) end
 	if z then holder.ZIndex = z end
+	local tile = tint or Color3.fromRGB(62, 62, 72)
 	for y = 0, math.ceil(maxH / cell) - 1 do
 		for x = 0, math.ceil(maxW / cell) - 1 do
 			if (x + y) % 2 == 0 then
-				local sq = Instance.new("Frame")
-				sq.Size = UDim2.new(0, cell, 0, cell)
-				sq.Position = UDim2.new(0, x * cell, 0, y * cell)
-				sq.BackgroundColor3 = tint or Color3.fromRGB(62, 62, 72)
-				sq.BorderSizePixel = 0
-				sq.Parent = holder
-				if z then sq.ZIndex = z end
+				local x0, y0 = x * cell, y * cell
+				local x1 = math.min(maxW, x0 + cell)
+				local y1 = math.min(maxH, y0 + cell)
+				if insideRoundRect(x0, y0, maxW, maxH, radius)
+					and insideRoundRect(x1, y0, maxW, maxH, radius)
+					and insideRoundRect(x0, y1, maxW, maxH, radius)
+					and insideRoundRect(x1, y1, maxW, maxH, radius) then
+					local sq = Instance.new("Frame")
+					sq.Size = UDim2.new(0, cell, 0, cell)
+					sq.Position = UDim2.new(0, x0, 0, y0)
+					sq.BackgroundColor3 = tile
+					sq.BorderSizePixel = 0
+					sq.Parent = holder
+					if z then sq.ZIndex = z end
+				end
 			end
 		end
 	end
@@ -1317,7 +1337,7 @@ function Section:AddColorPicker(opts)
 	swWrap.Size = UDim2.new(0, 20, 0, 18)
 	swWrap.AnchorPoint = Vector2.new(1, 0.5)
 	swWrap.Position = UDim2.new(1, -10, 0.5, 0)
-	swWrap.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
+	swWrap.BackgroundColor3 = Color3.fromRGB(44, 44, 52)
 	swWrap.BorderSizePixel = 0
 	swWrap.ClipsDescendants = true
 	swWrap.Parent = row
@@ -1526,7 +1546,7 @@ function Section:AddColorPicker(opts)
 		local alphaBar = Instance.new("Frame")
 		alphaBar.Size = UDim2.new(1, -58, 0, 12)
 		alphaBar.Position = UDim2.new(0, 10, 0, 132)
-		alphaBar.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
+		alphaBar.BackgroundColor3 = Color3.fromRGB(44, 44, 52)
 		alphaBar.BorderSizePixel = 0
 		zw(alphaBar).Parent = popup
 		corner(alphaBar, 6)
@@ -1575,7 +1595,7 @@ function Section:AddColorPicker(opts)
 		local chip = Instance.new("Frame")
 		chip.Size = UDim2.new(0, 24, 0, 20)
 		chip.Position = UDim2.new(0, 10, 0, 152)
-		chip.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
+		chip.BackgroundColor3 = Color3.fromRGB(44, 44, 52)
 		chip.BorderSizePixel = 0
 		chip.ClipsDescendants = true
 		zw(chip).Parent = popup
@@ -1778,7 +1798,15 @@ function Section:AddColorPicker(opts)
 	local obj = {}
 	function obj:Set(c, fire) if typeof(c) == "Color3" then color = c end sw.BackgroundColor3 = color if fire then pcall(callback, color, transp) end end
 	function obj:Get() return color, transp end
-	function obj:SetTransparency(t, fire) transp = math.clamp(tonumber(t) or 0, 0, 1) if fire then fire() else sw.BackgroundTransparency = transp end end
+	function obj:SetTransparency(t, notify)
+		transp = math.clamp(tonumber(t) or 0, 0, 1)
+		if notify then
+			fire() -- repaint, mark dirty, callback
+		else
+			sw.BackgroundTransparency = transp
+			if live then live() end
+		end
+	end
 	table.insert(win._cfg, { kind = "color", tab = self._tab._name, sec = self._title or "?", name = name, get = function() local c, t = obj:Get() return { hex = rgbToHex(c), transp = t } end, set = function(v) if typeof(v) == "table" then local c = hexToRgb(v.hex) if c then obj:Set(c) end obj:SetTransparency(v.transp, true) end end })
 	pcall(callback, color, transp)
 	return obj
@@ -7019,9 +7047,10 @@ end
 		table.sort(out)
 		return out
 	end
-	function win:SaveConfig(fname, quiet)
-		local path = cfgPath((fname == nil) and "default" or fname)
-		local data = { version = 1, items = {} }
+	-- one canonical snapshot of every registered control + the theme; the file
+	-- writer and the share-code exporter both read from here
+	function win:_configBlob()
+		local data = { version = 2, items = {} }
 		for _, c in ipairs(win._cfg) do
 			local ok, v = pcall(c.get)
 			if ok then
@@ -7040,6 +7069,11 @@ end
 				table.insert(data.items, { kind = "theme", tab = "", sec = "", name = "theme", value = tv })
 			end
 		end)
+		return data
+	end
+	function win:SaveConfig(fname, quiet)
+		local path = cfgPath((fname == nil) and "default" or fname)
+		local data = win:_configBlob()
 		local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(data) end)
 		if not ok or type(json) ~= "string" then if not quiet then win:Notify("Config", "Encode failed") end return false end
 		pcall(function() writefile(path, json) end)
@@ -7058,6 +7092,28 @@ end
 		print("[ATHERIUM] config saved -> " .. path .. " (" .. tostring(#data.items) .. " items) verified=" .. tostring(verified))
 		return verified
 	end
+	-- applies a decoded config table; returns how many values actually landed
+	function win:_applyConfig(data)
+		local items = (type(data) == "table" and (data.items or data)) or nil
+		if type(items) ~= "table" then return 0 end
+		local n = 0
+		for _, it in ipairs(items) do
+			if type(it) == "table" then
+				if it.kind == "theme" and type(it.value) == "table" then
+					if pcall(function() win:ApplyThemeData(it.value) end) then n = n + 1 end
+				else
+					for _, c in ipairs(win._cfg) do
+						if c.kind == it.kind and c.tab == it.tab and c.sec == it.sec and c.name == it.name then
+							if pcall(c.set, it.value) then n = n + 1 end
+							break
+						end
+					end
+				end
+			end
+		end
+		win._refreshKeyList()
+		return n
+	end
 	function win:LoadConfig(fname)
 		local paths = {}
 		if fname == nil then
@@ -7075,25 +7131,9 @@ end
 			if ok and type(txt) == "string" then
 				local ok2, data = pcall(function() return game:GetService("HttpService"):JSONDecode(txt) end)
 				if ok2 and type(data) == "table" then
-					local items = data.items or data
-					local n = 0
-					for _, it in ipairs(items) do
-						if type(it) == "table" then
-							if it.kind == "theme" and type(it.value) == "table" then
-								if pcall(function() win:ApplyThemeData(it.value) end) then n = n + 1 end
-							else
-								for _, c in ipairs(win._cfg) do
-									if c.kind == it.kind and c.tab == it.tab and c.sec == it.sec and c.name == it.name then
-										if pcall(c.set, it.value) then n = n + 1 end
-										break
-									end
-								end
-							end
-						end
-					end
-					win._refreshKeyList()
+					local n = win:_applyConfig(data)
 					print("[ATHERIUM] config loaded <- " .. path .. " (" .. tostring(n) .. " items)")
-					return true
+					return n > 0
 				end
 			end
 		end
@@ -7105,6 +7145,118 @@ end
 		local ok = pcall(function() delfile(path) end)
 		if ok then win:Notify("Config", "Deleted " .. tostring(fname)) else win:Notify("Config", "Delete failed") end
 		return ok
+	end
+
+	--// ---------- profiles: named slots plus one-line share codes ----------
+	-- A profile is just a config file; this layer adds sizes, rename and a
+	-- portable export so a whole layout can travel through Discord.
+	local B64C = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+	local B64D = {}
+	for i = 1, #B64C do B64D[B64C:sub(i, i)] = i - 1 end
+
+	local function b64encode(str)
+		local out = {}
+		for i = 1, #str, 3 do
+			local a, b, c = str:byte(i, i + 2)
+			local n = a * 65536 + (b or 0) * 256 + (c or 0)
+			table.insert(out, B64C:sub(math.floor(n / 262144) % 64 + 1, math.floor(n / 262144) % 64 + 1))
+			table.insert(out, B64C:sub(math.floor(n / 4096) % 64 + 1, math.floor(n / 4096) % 64 + 1))
+			table.insert(out, b and B64C:sub(math.floor(n / 64) % 64 + 1, math.floor(n / 64) % 64 + 1) or "=")
+			table.insert(out, c and B64C:sub(n % 64 + 1, n % 64 + 1) or "=")
+		end
+		return table.concat(out)
+	end
+
+	local function b64decode(str)
+		str = tostring(str):gsub("[^%w%+/=]", "")
+		local out = {}
+		for i = 1, #str, 4 do
+			local chunk = str:sub(i, i + 3)
+			local n1, n2 = B64D[chunk:sub(1, 1)], B64D[chunk:sub(2, 2)]
+			local n3, n4 = B64D[chunk:sub(3, 3)], B64D[chunk:sub(4, 4)]
+			if not n1 or not n2 then break end
+			local n = n1 * 262144 + n2 * 4096 + (n3 or 0) * 64 + (n4 or 0)
+			table.insert(out, string.char(math.floor(n / 65536) % 256))
+			if n3 then table.insert(out, string.char(math.floor(n / 256) % 256)) end
+			if n4 then table.insert(out, string.char(n % 256)) end
+		end
+		return table.concat(out)
+	end
+
+	function win:ListProfiles()
+		local out = {}
+		pcall(function()
+			if not listfiles then return end
+			for _, p in ipairs(listfiles("Atherium/Configs")) do
+				local n = tostring(p):match("([^/\\]+)%.json$")
+				if n then
+					local size = 0
+					pcall(function() size = #readfile("Atherium/Configs/" .. n .. ".json") end)
+					table.insert(out, { name = n, size = size })
+				end
+			end
+		end)
+		table.sort(out, function(a, b) return string.lower(a.name) < string.lower(b.name) end)
+		return out
+	end
+
+	function win:SaveProfile(name)
+		if name == nil or tostring(name) == "" then return false end
+		return win:SaveConfig(name, true)
+	end
+
+	function win:LoadProfile(name)
+		if name == nil or tostring(name) == "" then return false end
+		return win:LoadConfig(name)
+	end
+
+	function win:DeleteProfile(name)
+		if name == nil or tostring(name) == "" then return false end
+		return win:DeleteConfig(name)
+	end
+
+	function win:RenameProfile(oldName, newName)
+		if oldName == nil or newName == nil then return false end
+		local a, b = tostring(oldName), tostring(newName)
+		if a == "" or b == "" or a == b then return false end
+		local okRead, txt = pcall(function() return readfile(cfgPath(a)) end)
+		if not okRead or type(txt) ~= "string" then return false end
+		local okWrite = pcall(function() writefile(cfgPath(b), txt) end)
+		if not okWrite then return false end
+		pcall(function() delfile(cfgPath(a)) end)
+		return true
+	end
+
+	-- portable snapshot: ATH1:<base64 json>, safe to paste in any chat client
+	function win:ExportConfig()
+		local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(win:_configBlob()) end)
+		if not ok or type(json) ~= "string" then return nil end
+		return "ATH1:" .. b64encode(json)
+	end
+
+	function win:ImportConfig(code, quiet)
+		if type(code) ~= "string" then return 0 end
+		local body = code:gsub("%s+", ""):gsub("^ATH1:", "")
+		if #body < 8 then return 0 end
+		local ok, json = pcall(b64decode, body)
+		if not ok or type(json) ~= "string" or #json < 2 then
+			if not quiet then win:Notify("Profiles", "Share code is not valid", 4, "error") end
+			return 0
+		end
+		local ok2, data = pcall(function() return game:GetService("HttpService"):JSONDecode(json) end)
+		if not ok2 or type(data) ~= "table" then
+			if not quiet then win:Notify("Profiles", "Share code has no config inside", 4, "error") end
+			return 0
+		end
+		local n = win:_applyConfig(data)
+		if not quiet then
+			if n > 0 then
+				win:Notify("Profiles", "Applied " .. tostring(n) .. " values", 4, "success")
+			else
+				win:Notify("Profiles", "Nothing matched this build", 4, "warn")
+			end
+		end
+		return n
 	end
 
 	-- one stable entry point for external scripts: getgenv().Atherium
@@ -7178,7 +7330,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.5 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.0 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7259,6 +7411,7 @@ local function buildDemo()
 	local cfgs = cfg:AddSection("Configs", "save")
 	local cfgName, cfgSel = "", ""
 	local cfgList = nil
+	local profileSummary = nil
 	local function refreshCfgList()
 		local names = win:ListConfigs()
 		if #names == 0 then names = { "No configs" } end
@@ -7266,6 +7419,7 @@ local function buildDemo()
 			cfgList:SetOptions(names)
 			cfgSel = tostring(cfgList:Get() or "")
 		end
+		if profileSummary then profileSummary() end
 	end
 	local cfgNameBox = cfgs:AddTextBox({ Name = "Name", Placeholder = "Config name...", NoSave = true, Callback = function(t) cfgName = tostring(t or "") end })
 	cfgList = cfgs:AddDropdown({ Name = "List", Options = { "No configs" }, Default = "No configs", NoSave = true, Callback = function(v) cfgSel = tostring(v or "") if v ~= nil and v ~= "No configs" then win._activeCfg = tostring(v) end end })
@@ -7292,6 +7446,47 @@ local function buildDemo()
 	end })
 	colD:AddButton({ Name = "Refresh", Icon = "refresh-cw", Style = "dark", Height = 32, Callback = function() refreshCfgList() end })
 	refreshCfgList()
+	local share = cfg:AddSection("Profiles", "share-2")
+	local shareBox = share:AddTextBox({ Name = "Share code", Placeholder = "paste ATH1:... here", NoSave = true })
+	local shareInfo = share:AddLabel("Profiles are plain files in Atherium/Configs.")
+	profileSummary = function()
+		local list = win:ListProfiles()
+		local total = 0
+		for _, p in ipairs(list) do total = total + (p.size or 0) end
+		shareInfo.Text = string.format("%d profiles, %.1f KB on disk", #list, total / 1024)
+	end
+	profileSummary()
+	local sA, sB = share:AddColumns()
+	sA:AddButton({ Name = "Export", Icon = "upload", Style = "dark", Height = 32, Tooltip = "Copies the whole layout as one ATH1 code", Callback = function()
+		local code = win:ExportConfig()
+		if not code then win:Notify("Profiles", "Export failed", 4, "error") return end
+		shareBox:Set(code)
+		if setclipboard then pcall(setclipboard, code) end
+		win:Notify("Profiles", "Copied " .. tostring(#code) .. " chars", 4, "success")
+	end })
+	sB:AddButton({ Name = "Import", Icon = "download", Style = "dark", Height = 32, Tooltip = "Applies the code in the box", Callback = function()
+		win:ImportConfig(shareBox:Get())
+	end })
+	local sC, sD = share:AddColumns()
+	sC:AddButton({ Name = "Duplicate", Icon = "copy", Style = "dark", Height = 32, Tooltip = "Copies the selected profile", Callback = function()
+		if cfgSel == "" or cfgSel == "No configs" then win:Notify("Profiles", "Pick a profile first", 4, "warn") return end
+		local target = cfgSel .. " copy"
+		if win:LoadConfig(cfgSel) and win:SaveProfile(target) then
+			cfgSel = target
+			refreshCfgList()
+			win:Notify("Profiles", "Created " .. target, 4, "success")
+		end
+	end })
+	sD:AddButton({ Name = "Rename", Icon = "pencil", Style = "dark", Height = 32, Tooltip = "Renames the selected profile to the name above", Callback = function()
+		local raw = tostring(cfgNameBox:Get() or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if cfgSel == "" or cfgSel == "No configs" or raw == "" then win:Notify("Profiles", "Need a profile and a new name", 4, "warn") return end
+		if win:RenameProfile(cfgSel, raw) then
+			if win._activeCfg == cfgSel then win._activeCfg = raw end
+			cfgSel = raw
+			refreshCfgList()
+			win:Notify("Profiles", "Renamed to " .. raw, 4, "success")
+		end
+	end })
 	local c1 = cfg:AddSection("Interface", "settings")
 	c1:AddToggle({ Name = "UI Sounds", Default = true, Callback = function(v) win._sounds = v end })
 	c1:AddToggle({ Name = "Acrylic Blur", Default = true, Callback = function(v) win:SetAcrylic(v) end })
@@ -7331,7 +7526,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v10.5 built")
+	print("[ATHERIUM] demo v11.0 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)

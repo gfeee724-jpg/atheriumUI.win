@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-10.5-white">
+  <img alt="version" src="https://img.shields.io/badge/version-11.0-white">
   <img alt="language" src="https://img.shields.io/badge/luau-roblox-black">
   <img alt="updates" src="https://img.shields.io/badge/updates-weekly-white">
   <a href="docs/API.md"><img alt="docs" src="https://img.shields.io/badge/docs-API-black"></a>
@@ -94,7 +94,7 @@ The interface is updated **every week**: new controls, polish passes and
 performance work land on `main` continuously, and every release is documented in
 [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
-- Check `VibeUI.Version` after loading; the current build is `10.5`.
+- Check `VibeUI.Version` after loading; the current build is `11.0`.
 - GitHub raw caches by path and ignores query strings, so right after a push it can
   keep serving the previous build for a few minutes. If the version looks stale,
   load the same file through jsDelivr pinned to a commit - that URL is immutable
@@ -108,7 +108,7 @@ local MAIN = "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs
 local PIN = "https://cdn.jsdelivr.net/gh/gfeee724-jpg/atheriumUI.win@a649e05/VibeUI.lua"
 
 local VibeUI = loadstring(game:HttpGet(PIN))()
-print("Version:", VibeUI.Version) -- 10.5
+print("Version:", VibeUI.Version) -- 11.0
 ```
 
 ## Telegram

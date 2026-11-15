@@ -1,7 +1,28 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `10.5`;
+All notable changes to Atherium UI. Newest first. The current build is `11.0`;
 `VibeUI.Version` matches the newest entry.
+
+## 11.0
+
+- Config profiles: any number of named slots in `Atherium/Configs`, with
+  `ListProfiles`, `SaveProfile`, `LoadProfile`, `DeleteProfile` and
+  `RenameProfile`. `ListProfiles` returns `{ name, size }` so a UI can show how
+  much room a layout takes.
+- Share codes: `ExportConfig()` returns a single `ATH1:<base64 json>` line and
+  `ImportConfig(code)` applies it, reporting how many values matched. Base64 is
+  implemented inside the module because executors do not reliably expose one.
+- `SaveConfig` and `LoadConfig` now share `_configBlob` / `_applyConfig`, so a
+  file and a share code carry exactly the same data (blob `version = 2`).
+- Colour picker transparency round-trips through configs again. `SetTransparency`
+  used to shadow the picker's own `fire` helper with a boolean, so a restored
+  value never repainted the swatch and was lost on the next save.
+- Colour chip corners are clipped without `CanvasGroup`: `checkerFill` draws only
+  the tiles whose four corners pass `insideRoundRect`, and the parent's own
+  `UICorner` supplies the silhouette. No square cell can reach past the curve and
+  the layer works on clients that do not mask groups.
+- Demo gained a Profiles section: export/import field, duplicate, rename, and a
+  summary line with the profile count and disk size.
 
 ## 10.5
 

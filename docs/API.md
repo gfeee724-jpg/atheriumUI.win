@@ -12,12 +12,12 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"10.5"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"11.0"`). Check it when you depend on
 behaviour that was added later:
 
 ```lua
 local VibeUI = loadstring(readfile("VibeUI.lua"))()
-assert(VibeUI.Version == "10.5", "stale VibeUI.lua, re-download it")
+assert(VibeUI.Version == "11.0", "stale VibeUI.lua, re-download it")
 ```
 
 `readfile` returns whatever copy you saved earlier, and raw URLs sit behind a
@@ -46,7 +46,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"10.5"` |
+| `VibeUI.Version` | build string, e.g. `"11.0"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -129,6 +129,36 @@ Configs (files live in `Atherium/Configs`):
 | `win:SaveConfig(name, silent)` | writes every registered control + theme |
 | `win:LoadConfig(name)` | restores controls and theme, toggles keybinds |
 | `win:DeleteConfig(name)` | deletes one file |
+
+Profiles are the same files with sizes, rename and a portable share code:
+
+```lua
+local profiles = win:ListProfiles()   -- { { name = "pvp", size = 2048 }, ... }
+
+win:SaveProfile("pvp")                -- snapshot every control + theme
+win:LoadProfile("pvp")                -- apply it back
+win:RenameProfile("pvp", "arena")     -- move the file, keep the contents
+win:DeleteProfile("arena")
+
+local code = win:ExportConfig()       -- "ATH1:<base64 json>", one line
+print(#code .. " chars")
+
+local applied = win:ImportConfig(code)        -- silent
+local applied = win:ImportConfig(code, true)  -- quiet: no notifications
+```
+
+| Method | Description |
+| --- | --- |
+| `win:ListProfiles()` | `{ name, size }` per file, sorted by name |
+| `win:SaveProfile(name)` | alias for `SaveConfig(name, true)` |
+| `win:LoadProfile(name)` | alias for `LoadConfig(name)` |
+| `win:DeleteProfile(name)` | alias for `DeleteConfig(name)` |
+| `win:RenameProfile(old, new)` | copies to the new name, deletes the old file |
+| `win:ExportConfig()` | `ATH1:<base64 json>` string, or `nil` on failure |
+| `win:ImportConfig(code, quiet)` | applies a code, returns how many values matched |
+
+`ImportConfig` matches controls by `kind`, tab, section and name, so a code from
+an older build applies whatever still exists instead of failing outright.
 
 ---
 
@@ -320,7 +350,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v10.5", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v11.0", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -350,7 +380,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "10.5"
+api.Version    -- "11.0"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)

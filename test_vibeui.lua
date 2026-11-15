@@ -42,7 +42,7 @@ if not check("compile", function()
 	assert(type(VibeUI.CreateWindow) == "function", "CreateWindow missing")
 end) then return end
 
-local EXPECTED = "10.5" -- bump together with VibeUI.Version
+local EXPECTED = "11.0" -- bump together with VibeUI.Version
 
 check("version", function()
 	assert(VibeUI.Version, "Version missing")
@@ -334,6 +334,38 @@ check("Configs", function()
 	assert(type(list) == "table", "ListConfigs did not return a table")
 	win:LoadConfig("smoke_test")
 	win:DeleteConfig("smoke_test")
+end)
+
+check("Config colour transparency", function()
+	local cp = sec:AddColorPicker({
+		Name = "Round Trip", Default = Color3.fromRGB(10, 200, 30), Transparency = 0.62,
+		Callback = function() end,
+	})
+	win:SaveConfig("smoke_alpha", true)
+	cp:SetTransparency(0.05)
+	win:LoadConfig("smoke_alpha")
+	local _, t = cp:Get()
+	assert(math.abs(t - 0.62) < 0.01, "transparency not restored, got " .. tostring(t))
+	win:DeleteConfig("smoke_alpha")
+end)
+
+check("Profiles", function()
+	win:SaveProfile("smoke_prof")
+	local found = false
+	for _, p in ipairs(win:ListProfiles()) do
+		assert(type(p.size) == "number", "profile entry has no size")
+		if p.name == "smoke_prof" then found = true end
+	end
+	assert(found, "SaveProfile did not create a file")
+
+	local code = win:ExportConfig()
+	assert(type(code) == "string" and #code > 16, "ExportConfig returned nothing")
+	assert(code:sub(1, 5) == "ATH1:", "share code is missing the ATH1 prefix")
+	assert(win:ImportConfig(code, true) > 0, "ImportConfig applied nothing")
+
+	assert(win:RenameProfile("smoke_prof", "smoke_prof2"), "RenameProfile failed")
+	assert(win:LoadProfile("smoke_prof2"), "renamed profile does not load")
+	assert(win:DeleteProfile("smoke_prof2"), "DeleteProfile failed")
 end)
 
 check("Toggle", function()
