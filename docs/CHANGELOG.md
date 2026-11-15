@@ -1,7 +1,15 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `10.4`;
+All notable changes to Atherium UI. Newest first. The current build is `10.5`;
 `VibeUI.Version` matches the newest entry.
+
+## 10.5
+
+- Checker layers moved into a `CanvasGroup`, which is the Roblox equivalent of
+  `overflow: hidden` with a radius: descendants are rasterised and masked by the
+  group's own `UICorner`, so a 3px cell can no longer poke a square corner past
+  the chip's 7px curve. `ClipsDescendants` plus `UICorner` was not enough - it
+  clipped to the rectangle, not the rounded shape.
 
 ## 10.4
 

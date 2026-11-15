@@ -1,4 +1,4 @@
---// ATHERIUM v10.4 | soft checker on the colour chip
+--// ATHERIUM v10.5 | CanvasGroup mask on every checker layer
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "10.4"
+VibeUI.Version = "10.5"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -98,12 +98,11 @@ end
 
 local function checkerFill(parent, maxW, maxH, cell, radius, z, tint)
 	cell = cell or 6
-	local holder = Instance.new("Frame")
+	local holder = Instance.new("CanvasGroup")
 	holder.Name = "Checker"
 	holder.Size = UDim2.new(1, 0, 1, 0)
 	holder.BackgroundColor3 = Color3.fromRGB(44, 44, 52)
 	holder.BorderSizePixel = 0
-	holder.ClipsDescendants = true
 	holder.Parent = parent
 	if radius then corner(holder, radius) end
 	if z then holder.ZIndex = z end
@@ -7179,7 +7178,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.4 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.5 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7332,7 +7331,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v10.4 built")
+	print("[ATHERIUM] demo v10.5 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
