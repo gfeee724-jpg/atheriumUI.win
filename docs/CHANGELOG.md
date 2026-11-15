@@ -1,7 +1,15 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `11.0`;
+All notable changes to Atherium UI. Newest first. The current build is `11.1`;
 `VibeUI.Version` matches the newest entry.
+
+## 11.1
+
+- Demo Home tab has a Community section: a Telegram button that copies
+  `t.me/AtheriumWIN` to the clipboard and confirms with a notification, and a
+  TikTok button that says the channel is not live yet. Both go through
+  `setclipboard` when the executor exposes it, and do nothing destructive when it
+  does not.
 
 ## 11.0
 

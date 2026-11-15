@@ -1,4 +1,4 @@
---// ATHERIUM v11.0 | config profiles, share codes, clip-free checker
+--// ATHERIUM v11.1 | community links in the demo
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "11.0"
+VibeUI.Version = "11.1"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -7330,7 +7330,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.0 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.1 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7343,6 +7343,20 @@ local function buildDemo()
 	end })
 	w:AddButton({ Name = "Print Hello", Icon = "zap", Callback = function()
 		print("[ATHERIUM] hello from button")
+	end })
+
+	local social = home:AddSection("Community", "send")
+	social:AddLabel("@AtheriumWIN - builds, previews and patch notes.")
+	local function copyLink(url, label)
+		if setclipboard then pcall(setclipboard, url) end
+		win:Notify(label, "Link copied: " .. url, 4, "success")
+	end
+	local socialL, socialR = social:AddColumns()
+	socialL:AddButton({ Name = "Telegram", Icon = "send", Style = "dark", Height = 32, Tooltip = "t.me/AtheriumWIN", Callback = function()
+		copyLink("https://t.me/AtheriumWIN", "Telegram")
+	end })
+	socialR:AddButton({ Name = "TikTok", Icon = "music", Style = "dark", Height = 32, Tooltip = "Not live yet", Callback = function()
+		win:Notify("TikTok", "Channel is not live yet - the Telegram has everything for now.", 4, "warn")
 	end })
 
 	local combat = win:AddTab("Combat", "swords")
@@ -7526,7 +7540,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v11.0 built")
+	print("[ATHERIUM] demo v11.1 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
