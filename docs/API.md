@@ -12,12 +12,12 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"10.0"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"10.1"`). Check it when you depend on
 behaviour that was added later:
 
 ```lua
 local VibeUI = loadstring(readfile("VibeUI.lua"))()
-assert(VibeUI.Version == "10.0", "stale VibeUI.lua, re-download it")
+assert(VibeUI.Version == "10.1", "stale VibeUI.lua, re-download it")
 ```
 
 `readfile` returns whatever copy you saved earlier, and raw URLs sit behind a
@@ -46,7 +46,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"10.0"` |
+| `VibeUI.Version` | build string, e.g. `"10.1"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -170,8 +170,8 @@ regardless of how many digits it has. It brightens while hovering or dragging
 and returns to the secondary tone afterwards. `ShowValue = false` removes that
 slot entirely and hands the width back to the title. The track is one flat 5px
 capsule (no glow stack, no dark sleeve around the active part); the thumb is a
-single 15x20 capsule with one hairline rim, sized 17x22 on hover, flattened to
-20x14 while dragging and sprung back on release. Fast drags update position
+single 10x14 capsule with one hairline rim, sized 12x16 on hover,
+flattened to 14x9 while dragging and sprung back on release. Fast drags update position
 immediately (no tween), `Set()` and window resizes animate. Title text sits at a
 12px left inset and the value ends at the same 12px right inset.
 
@@ -238,6 +238,11 @@ cp:Get()          -- color, transparency
 cp:Set(color, false)
 cp:SetTransparency(0.4)
 ```
+
+`Transparency` is a real alpha channel in `0..1`, not a shade: the swatch, the
+popup preview and the strip all sit on a checkerboard, so 50% looks like 50%
+instead of turning the chip grey. The strip ramps from the chosen colour to fully
+transparent, and the handle tracks it.
 
 Pair with `VibeUI.Paint` to drive ESP / Drawing objects.
 
@@ -315,7 +320,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v10.0", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v10.1", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -345,7 +350,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "10.0"
+api.Version    -- "10.1"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)

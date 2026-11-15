@@ -1,7 +1,16 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `10.0`;
+All notable changes to Atherium UI. Newest first. The current build is `10.1`;
 `VibeUI.Version` matches the newest entry.
+
+## 10.1
+
+- Slider thumb is smaller: 10x14 idle, 12x16 on hover, 14x9 while dragging,
+  with a 5px corner radius. The 22px track stays the drag target.
+- Colour picker transparency is real alpha now. The swatch, the popup chip and
+  the strip all sit on a checkerboard, and the strip ramps from the chosen
+  colour to fully transparent (it used to stop at 85% and read as grey).
+- Dropping alpha no longer washes the preview into white, grey and black.
 
 ## 10.0
 

@@ -1,4 +1,4 @@
---// ATHERIUM v10.0 | scrolling sidebar, tooltips, dropdown v2, notify v2
+--// ATHERIUM v10.1 | smaller slider thumb, real alpha in the colour picker
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "10.0"
+VibeUI.Version = "10.1"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -94,6 +94,33 @@ local function stroke(inst, color, transp, thick)
 	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	s.Parent = inst
 	return s
+end
+
+local function checkerFill(parent, maxW, maxH, cell, radius, z)
+	cell = cell or 6
+	local holder = Instance.new("Frame")
+	holder.Name = "Checker"
+	holder.Size = UDim2.new(1, 0, 1, 0)
+	holder.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
+	holder.BorderSizePixel = 0
+	holder.ClipsDescendants = true
+	holder.Parent = parent
+	if radius then corner(holder, radius) end
+	if z then holder.ZIndex = z end
+	for y = 0, math.ceil(maxH / cell) - 1 do
+		for x = 0, math.ceil(maxW / cell) - 1 do
+			if (x + y) % 2 == 0 then
+				local sq = Instance.new("Frame")
+				sq.Size = UDim2.new(0, cell, 0, cell)
+				sq.Position = UDim2.new(0, x * cell, 0, y * cell)
+				sq.BackgroundColor3 = Color3.fromRGB(88, 88, 98)
+				sq.BorderSizePixel = 0
+				sq.Parent = holder
+				if z then sq.ZIndex = z end
+			end
+		end
+	end
+	return holder
 end
 
 local function hairline(parent, yPos)
@@ -562,12 +589,12 @@ function Section:AddSlider(opts)
 	thumb.Name = "Thumb"
 	thumb.AnchorPoint = Vector2.new(0.5, 0.5)
 	thumb.Position = UDim2.new(0, 0, 0.5, 0)
-	thumb.Size = UDim2.new(0, 14, 0, 18)
+	thumb.Size = UDim2.new(0, 10, 0, 14)
 	thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	thumb.BorderSizePixel = 0
 	thumb.ZIndex = 4
 	thumb.Parent = track
-	corner(thumb, 7)
+	corner(thumb, 5)
 	local thumbGrad = Instance.new("UIGradient")
 	thumbGrad.Rotation = 90
 	thumbGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(243, 243, 249))
@@ -607,9 +634,9 @@ function Section:AddSlider(opts)
 	-- squash: idle capsule -> slightly taller on hover -> flattened and
 	-- stretched while dragging, then a springy return on release
 	local THUMB = {
-		idle = { w = 15, h = 20, dur = 0.46, style = Enum.EasingStyle.Back },
-		hover = { w = 17, h = 22, dur = 0.26, style = Enum.EasingStyle.Quad },
-		drag = { w = 20, h = 14, dur = 0.22, style = Enum.EasingStyle.Quad },
+		idle = { w = 10, h = 14, dur = 0.46, style = Enum.EasingStyle.Back },
+		hover = { w = 12, h = 16, dur = 0.26, style = Enum.EasingStyle.Quad },
+		drag = { w = 14, h = 9, dur = 0.22, style = Enum.EasingStyle.Quad },
 	}
 	local squashState = "idle"
 	local function squash(mode)
@@ -1284,17 +1311,29 @@ function Section:AddColorPicker(opts)
 	label.Parent = row
 	win:ThemeRegister(label, "text")
 
+	-- swatch: checkerboard under the colour, so alpha reads as alpha instead
+	-- of fading the chip into the row behind it
+	local swWrap = Instance.new("Frame")
+	swWrap.Name = "Swatch"
+	swWrap.Size = UDim2.new(0, 22, 0, 18)
+	swWrap.AnchorPoint = Vector2.new(1, 0.5)
+	swWrap.Position = UDim2.new(1, -10, 0.5, 0)
+	swWrap.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
+	swWrap.BorderSizePixel = 0
+	swWrap.ClipsDescendants = true
+	swWrap.Parent = row
+	corner(swWrap, 5)
+	checkerFill(swWrap, 22, 18, 6, 5)
+
 	local sw = Instance.new("TextButton")
-	sw.Size = UDim2.new(0, 20, 0, 18)
-	sw.AnchorPoint = Vector2.new(1, 0.5)
-	sw.Position = UDim2.new(1, -10, 0.5, 0)
+	sw.Name = "Fill"
+	sw.Size = UDim2.new(1, 0, 1, 0)
 	sw.BackgroundColor3 = default
 	sw.BackgroundTransparency = transp
 	sw.Text = ""
 	sw.AutoButtonColor = false
-	sw.Parent = row
-	corner(sw, 5)
-	stroke(sw, Color3.fromRGB(255, 255, 255), 0.85, 1)
+	sw.Parent = swWrap
+	stroke(swWrap, Color3.fromRGB(255, 255, 255), 0.85, 1)
 
 	local h, s, v = rgbToHsv(default)
 	local color = default
@@ -1481,21 +1520,30 @@ function Section:AddColorPicker(opts)
 		hueHit.Text = ""
 		zw(hueHit, Z + 2).Parent = popup
 
-		-- transparency strip
+		-- transparency strip: checkerboard under a ramp that runs from the real
+		-- colour to fully transparent, so the handle means what it says
 		local alphaBar = Instance.new("Frame")
-		alphaBar.Size = UDim2.new(1, -58, 0, 8)
-		alphaBar.Position = UDim2.new(0, 10, 0, 134)
-		alphaBar.BackgroundColor3 = color
+		alphaBar.Size = UDim2.new(1, -58, 0, 12)
+		alphaBar.Position = UDim2.new(0, 10, 0, 132)
+		alphaBar.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
 		alphaBar.BorderSizePixel = 0
 		zw(alphaBar).Parent = popup
-		corner(alphaBar, 4)
+		corner(alphaBar, 6)
+		checkerFill(alphaBar, 240, 12, 6, 6, Z)
+		local alphaFill = Instance.new("Frame")
+		alphaFill.Name = "Ramp"
+		alphaFill.Size = UDim2.new(1, 0, 1, 0)
+		alphaFill.BackgroundColor3 = color
+		alphaFill.BorderSizePixel = 0
+		zw(alphaFill, Z + 1).Parent = alphaBar
+		corner(alphaFill, 6)
 		local alphaGrad = Instance.new("UIGradient")
 		alphaGrad.Rotation = 0
 		alphaGrad.Transparency = NumberSequence.new({
 			NumberSequenceKeypoint.new(0, 0),
-			NumberSequenceKeypoint.new(1, 0.85),
+			NumberSequenceKeypoint.new(1, 1),
 		})
-		alphaGrad.Parent = alphaBar
+		alphaGrad.Parent = alphaFill
 		local alphaCur = Instance.new("Frame")
 		alphaCur.Size = UDim2.new(0, 12, 0, 12)
 		alphaCur.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1526,10 +1574,19 @@ function Section:AddColorPicker(opts)
 		local chip = Instance.new("Frame")
 		chip.Size = UDim2.new(0, 24, 0, 20)
 		chip.Position = UDim2.new(0, 10, 0, 152)
-		chip.BackgroundColor3 = color
+		chip.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
 		chip.BorderSizePixel = 0
+		chip.ClipsDescendants = true
 		zw(chip).Parent = popup
 		corner(chip, 5)
+		checkerFill(chip, 24, 20, 6, 5, Z)
+		local chipFill = Instance.new("Frame")
+		chipFill.Name = "Fill"
+		chipFill.Size = UDim2.new(1, 0, 1, 0)
+		chipFill.BackgroundColor3 = color
+		chipFill.BackgroundTransparency = transp
+		chipFill.BorderSizePixel = 0
+		zw(chipFill, Z + 1).Parent = chip
 		stroke(chip, Color3.fromRGB(255, 255, 255), 0.8, 1)
 
 		local hexBox = Instance.new("TextBox")
@@ -1600,12 +1657,12 @@ function Section:AddColorPicker(opts)
 			else
 				hueCur.Position = UDim2.new(h, 0, 0.5, 0)
 			end
-			chip.BackgroundColor3 = color
-			chip.BackgroundTransparency = transp
+			chipFill.BackgroundColor3 = color
+			chipFill.BackgroundTransparency = transp
 			if not hexBox:IsFocused() then
 				hexBox.Text = "#" .. rgbToHex(color)
 			end
-			alphaBar.BackgroundColor3 = color
+			alphaFill.BackgroundColor3 = color
 			alphaPct.Text = tostring(math.floor(transp * 100 + 0.5)) .. "%"
 			local aw = alphaBar.AbsoluteSize.X
 			if aw > 20 then
@@ -7119,7 +7176,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.0 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.1 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7272,7 +7329,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v10.0 built")
+	print("[ATHERIUM] demo v10.1 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
