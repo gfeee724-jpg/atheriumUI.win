@@ -42,7 +42,7 @@ if not check("compile", function()
 	assert(type(VibeUI.CreateWindow) == "function", "CreateWindow missing")
 end) then return end
 
-local EXPECTED = "11.1" -- bump together with VibeUI.Version
+local EXPECTED = "11.2" -- bump together with VibeUI.Version
 
 check("version", function()
 	assert(VibeUI.Version, "Version missing")
@@ -226,6 +226,12 @@ check("AddColorPicker", function()
 	cp:Set(Color3.fromRGB(255, 255, 255), false)
 	cp:SetTransparency(0.5)
 	pcall(function() preview:Destroy() end)
+end)
+
+check("OpenLink", function()
+	local how = VibeUI.OpenLink("https://t.me/AtheriumWIN")
+	assert(how == "browser" or how == "clipboard" or how == "none", "bad return: " .. tostring(how))
+	assert(VibeUI.OpenLink("") == "none", "empty url must not launch")
 end)
 
 check("AddKeybind", function()

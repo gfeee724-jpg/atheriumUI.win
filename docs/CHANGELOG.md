@@ -1,7 +1,17 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `11.1`;
+All notable changes to Atherium UI. Newest first. The current build is `11.2`;
 `VibeUI.Version` matches the newest entry.
+
+## 11.2
+
+- `VibeUI.OpenLink(url)` opens a URL in the system browser when the executor
+  injects a launcher (`openbrowser`, `openurl`, `launchurl` and friends), and
+  otherwise copies the link and returns `"clipboard"`. Luau has no shell and
+  Roblox exposes no browser API, so a launcher is the only real path.
+- The demo calls it once per game session after the window is built, so
+  injecting brings the Telegram channel up without opening a tab on every
+  re-inject. The Community button uses the same helper with a notification.
 
 ## 11.1
 

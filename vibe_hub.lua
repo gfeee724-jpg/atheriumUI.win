@@ -1,4 +1,4 @@
---// ATHERIUM v11.1 | community links in the demo
+--// ATHERIUM v11.2 | VibeUI.OpenLink + channel on inject
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "11.1"
+VibeUI.Version = "11.2"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -269,6 +269,29 @@ function VibeUI.Paint(inst, color, transp)
 	if typeof(inst) ~= "Instance" then return end
 	pcall(function() inst.Color = color end)
 	if transp ~= nil then pcall(function() inst.Transparency = transp end) end
+end
+
+--// Opens a URL in the system browser when the executor exposes a launcher.
+--// Returns "browser" (opened), "clipboard" (link copied instead) or "none".
+--// Luau itself has no shell and Roblox has no browser API, so the launcher
+--// names below are the ones executors are known to inject.
+local LINK_LAUNCHERS = { "openbrowser", "openbrowserwindow", "open_url", "openurl", "open_web", "launchurl", "launch_url" }
+function VibeUI.OpenLink(url)
+	url = tostring(url or "")
+	if url == "" then return "none" end
+	local env = nil
+	pcall(function() env = getgenv() end)
+	for _, name in ipairs(LINK_LAUNCHERS) do
+		local fn = nil
+		if env then pcall(function() fn = env[name] end) end
+		if type(fn) ~= "function" and type(_G[name]) == "function" then fn = _G[name] end
+		if type(fn) == "function" then
+			local ok, res = pcall(fn, url)
+			if ok and res ~= false then return "browser" end
+		end
+	end
+	if type(setclipboard) == "function" and pcall(setclipboard, url) then return "clipboard" end
+	return "none"
 end
 
 --// ---------- Acrylic (Fluent-style: DoF + camera-tracked glass + frost) ----------
@@ -7330,7 +7353,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.1 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.2 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7347,13 +7370,22 @@ local function buildDemo()
 
 	local social = home:AddSection("Community", "send")
 	social:AddLabel("@AtheriumWIN - builds, previews and patch notes.")
-	local function copyLink(url, label)
-		if setclipboard then pcall(setclipboard, url) end
-		win:Notify(label, "Link copied: " .. url, 4, "success")
+	local TELEGRAM = "https://t.me/AtheriumWIN"
+	local function openChannel(quiet)
+		local how = VibeUI.OpenLink(TELEGRAM)
+		if quiet then return how end
+		if how == "browser" then
+			win:Notify("Telegram", "Opened in your browser.", 3.5, "success")
+		elseif how == "clipboard" then
+			win:Notify("Telegram", "Link copied: t.me/AtheriumWIN", 4, "info")
+		else
+			win:Notify("Telegram", TELEGRAM, 5, "info")
+		end
+		return how
 	end
 	local socialL, socialR = social:AddColumns()
 	socialL:AddButton({ Name = "Telegram", Icon = "send", Style = "dark", Height = 32, Tooltip = "t.me/AtheriumWIN", Callback = function()
-		copyLink("https://t.me/AtheriumWIN", "Telegram")
+		openChannel(false)
 	end })
 	socialR:AddButton({ Name = "TikTok", Icon = "music", Style = "dark", Height = 32, Tooltip = "Not live yet", Callback = function()
 		win:Notify("TikTok", "Channel is not live yet - the Telegram has everything for now.", 4, "warn")
@@ -7540,10 +7572,24 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v11.1 built")
+	print("[ATHERIUM] demo v11.2 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
+
+	-- one attempt per game session, so re-injecting does not spawn a browser
+	-- every time; executors without a launcher just get the link on the clipboard
+	pcall(function()
+		local g = getgenv()
+		if g and g.AtheriumLinkOpened then return end
+		if g then g.AtheriumLinkOpened = true end
+		local how = openChannel(true)
+		if how == "browser" then
+			win:Notify("Telegram", "Atherium window opened in your browser.", 5, "success")
+		elseif how == "clipboard" then
+			win:Notify("Telegram", "Link copied: t.me/AtheriumWIN", 6, "info")
+		end
+	end)
 	return win
 end
 
