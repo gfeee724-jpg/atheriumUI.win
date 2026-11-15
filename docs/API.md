@@ -12,12 +12,12 @@ local win = VibeUI:CreateWindow({ Title = "My Hub" })
 -- single file demo (vibe_hub.lua) already returns the VibeUI table and builds a demo window
 ```
 
-`VibeUI.Version` is the build number (`"9.5"`). Check it when you depend on
+`VibeUI.Version` is the build number (`"10.0"`). Check it when you depend on
 behaviour that was added later:
 
 ```lua
 local VibeUI = loadstring(readfile("VibeUI.lua"))()
-assert(VibeUI.Version == "9.5", "stale VibeUI.lua, re-download it")
+assert(VibeUI.Version == "10.0", "stale VibeUI.lua, re-download it")
 ```
 
 `readfile` returns whatever copy you saved earlier, and raw URLs sit behind a
@@ -46,7 +46,7 @@ banner, appends `return VibeUI`, and runs the Lua balance checkers on the result
 
 | Function | Notes |
 | --- | --- |
-| `VibeUI.Version` | build string, e.g. `"9.5"` |
+| `VibeUI.Version` | build string, e.g. `"10.0"` |
 | `VibeUI.BuildTag` | internal build id |
 | `VibeUI.FontChoices()` | array of font names valid on this client |
 | `VibeUI.Paint(inst, color, transp)` | applies a picker color/transparency to a UI or Drawing object |
@@ -315,7 +315,7 @@ returning the label string (defaults to `VibeUI.FmtInt`). `Height` is clamped to
 ## Watermark
 
 ```lua
-local wm = win:CreateWatermark({ Version = "v9.5", Position = UDim2.new(0, 16, 0, 54) })
+local wm = win:CreateWatermark({ Version = "v10.0", Position = UDim2.new(0, 16, 0, 54) })
 ```
 
 Segments are fixed: `cheat` (brand), `players`, `ping`, `time`, `player`, `fps`.
@@ -345,7 +345,7 @@ compatibility with older watermark call sites.
 
 ```lua
 local api = getgenv().Atherium
-api.Version    -- "9.5"
+api.Version    -- "10.0"
 api.UI         -- VibeUI table
 api.Window     -- win
 api.Watermark  -- watermark handle (nil until CreateWatermark)
