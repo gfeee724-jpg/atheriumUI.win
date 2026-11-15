@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-10.1-white">
+  <img alt="version" src="https://img.shields.io/badge/version-10.2-white">
   <img alt="language" src="https://img.shields.io/badge/luau-roblox-black">
   <img alt="updates" src="https://img.shields.io/badge/updates-weekly-white">
   <a href="docs/API.md"><img alt="docs" src="https://img.shields.io/badge/docs-API-black"></a>
@@ -94,7 +94,7 @@ The interface is updated **every week**: new controls, polish passes and
 performance work land on `main` continuously, and every release is documented in
 [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
-- Check `VibeUI.Version` after loading; the current build is `10.1`.
+- Check `VibeUI.Version` after loading; the current build is `10.2`.
 - Raw links sit behind a CDN cache for a few minutes after a push, so if a
   control looks older than the changelog, re-fetch with a cache buster.
 
@@ -103,7 +103,7 @@ local URL = "https://raw.githubusercontent.com/gfeee724-jpg/atheriumUI.win/refs/
 writefile("VibeUI.lua", game:HttpGet(URL .. "?v=" .. tostring(os.time())))
 
 local VibeUI = loadstring(readfile("VibeUI.lua"))()
-assert(VibeUI.Version == "10.1", "stale VibeUI.lua, re-download it")
+assert(VibeUI.Version == "10.2", "stale VibeUI.lua, re-download it")
 ```
 
 ## Telegram

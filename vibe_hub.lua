@@ -1,4 +1,4 @@
---// ATHERIUM v10.1 | smaller slider thumb, real alpha in the colour picker
+--// ATHERIUM v10.2 | fine checker under the colour chip, rounder swatch
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "10.1"
+VibeUI.Version = "10.2"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -101,7 +101,7 @@ local function checkerFill(parent, maxW, maxH, cell, radius, z)
 	local holder = Instance.new("Frame")
 	holder.Name = "Checker"
 	holder.Size = UDim2.new(1, 0, 1, 0)
-	holder.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
+	holder.BackgroundColor3 = Color3.fromRGB(44, 44, 52)
 	holder.BorderSizePixel = 0
 	holder.ClipsDescendants = true
 	holder.Parent = parent
@@ -113,7 +113,7 @@ local function checkerFill(parent, maxW, maxH, cell, radius, z)
 				local sq = Instance.new("Frame")
 				sq.Size = UDim2.new(0, cell, 0, cell)
 				sq.Position = UDim2.new(0, x * cell, 0, y * cell)
-				sq.BackgroundColor3 = Color3.fromRGB(88, 88, 98)
+				sq.BackgroundColor3 = Color3.fromRGB(62, 62, 72)
 				sq.BorderSizePixel = 0
 				sq.Parent = holder
 				if z then sq.ZIndex = z end
@@ -1315,15 +1315,15 @@ function Section:AddColorPicker(opts)
 	-- of fading the chip into the row behind it
 	local swWrap = Instance.new("Frame")
 	swWrap.Name = "Swatch"
-	swWrap.Size = UDim2.new(0, 22, 0, 18)
+	swWrap.Size = UDim2.new(0, 20, 0, 18)
 	swWrap.AnchorPoint = Vector2.new(1, 0.5)
 	swWrap.Position = UDim2.new(1, -10, 0.5, 0)
 	swWrap.BackgroundColor3 = Color3.fromRGB(52, 52, 60)
 	swWrap.BorderSizePixel = 0
 	swWrap.ClipsDescendants = true
 	swWrap.Parent = row
-	corner(swWrap, 5)
-	checkerFill(swWrap, 22, 18, 6, 5)
+	corner(swWrap, 6)
+	checkerFill(swWrap, 20, 18, 4, 6, 1)
 
 	local sw = Instance.new("TextButton")
 	sw.Name = "Fill"
@@ -1332,6 +1332,7 @@ function Section:AddColorPicker(opts)
 	sw.BackgroundTransparency = transp
 	sw.Text = ""
 	sw.AutoButtonColor = false
+	sw.ZIndex = 2
 	sw.Parent = swWrap
 	stroke(swWrap, Color3.fromRGB(255, 255, 255), 0.85, 1)
 
@@ -1529,7 +1530,7 @@ function Section:AddColorPicker(opts)
 		alphaBar.BorderSizePixel = 0
 		zw(alphaBar).Parent = popup
 		corner(alphaBar, 6)
-		checkerFill(alphaBar, 240, 12, 6, 6, Z)
+		checkerFill(alphaBar, 240, 12, 5, 6, Z)
 		local alphaFill = Instance.new("Frame")
 		alphaFill.Name = "Ramp"
 		alphaFill.Size = UDim2.new(1, 0, 1, 0)
@@ -1578,8 +1579,8 @@ function Section:AddColorPicker(opts)
 		chip.BorderSizePixel = 0
 		chip.ClipsDescendants = true
 		zw(chip).Parent = popup
-		corner(chip, 5)
-		checkerFill(chip, 24, 20, 6, 5, Z)
+		corner(chip, 6)
+		checkerFill(chip, 24, 20, 4, 6, Z)
 		local chipFill = Instance.new("Frame")
 		chipFill.Name = "Fill"
 		chipFill.Size = UDim2.new(1, 0, 1, 0)
@@ -7176,7 +7177,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.1 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v10.2 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7329,7 +7330,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v10.1 built")
+	print("[ATHERIUM] demo v10.2 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)

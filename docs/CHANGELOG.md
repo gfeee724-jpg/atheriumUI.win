@@ -1,7 +1,14 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `10.1`;
+All notable changes to Atherium UI. Newest first. The current build is `10.2`;
 `VibeUI.Version` matches the newest entry.
+
+## 10.2
+
+- Colour swatch no longer reads as a chess tile: 4px squares in a softer pair
+  of greys, back to a 20x18 chip with a 6px radius, and the colour fill now
+  carries an explicit ZIndex so it always paints over the checkerboard.
+- The popup chip got the same treatment (4px cells, 6px radius).
 
 ## 10.1
 
