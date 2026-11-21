@@ -1,7 +1,16 @@
 # Changelog
 
-All notable changes to Atherium UI. Newest first. The current build is `11.2`;
+All notable changes to Atherium UI. Newest first. The current build is `11.3`;
 `VibeUI.Version` matches the newest entry.
+
+## 11.3
+
+- `VibeUI.OpenLink` now takes the engine routes before executor globals:
+  `BrowserService:OpenBrowserWindow` / `GuiService:OpenBrowserWindow` (thread
+  identity 8 is enough), then the `MessageBusService` `Linking/openURLRequest`
+  escape hatch, then executor launchers, then the clipboard. Real, Synapse-class
+  and most UNC executors hit the first route, so the channel really does open in
+  the default browser.
 
 ## 11.2
 

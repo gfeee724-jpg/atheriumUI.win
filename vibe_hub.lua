@@ -1,4 +1,4 @@
---// ATHERIUM v11.2 | VibeUI.OpenLink + channel on inject
+--// ATHERIUM v11.3 | OpenLink via BrowserService / MessageBus
 --// Palette: #09090B bg, #0D0D0F side, #121215 cards, #4A4A52 disabled, #8A8A93 dim, #FFFFFF accent
 --// Rules: ASCII only, Lucide icons, sidebar tabs left, section cards, live HSV color picker.
 
@@ -6,7 +6,7 @@ local VibeUI = {}
 VibeUI.__index = VibeUI
 -- public build metadata: scripts may check VibeUI.Version before using
 -- features that were added later
-VibeUI.Version = "11.2"
+VibeUI.Version = "11.3"
 VibeUI.BuildTag = "viewport-charts-8"
 
 local Players = game:GetService("Players")
@@ -271,14 +271,33 @@ function VibeUI.Paint(inst, color, transp)
 	if transp ~= nil then pcall(function() inst.Transparency = transp end) end
 end
 
---// Opens a URL in the system browser when the executor exposes a launcher.
---// Returns "browser" (opened), "clipboard" (link copied instead) or "none".
---// Luau itself has no shell and Roblox has no browser API, so the launcher
---// names below are the ones executors are known to inject.
+--// Opens a URL in the system browser and reports which path worked.
+--// Returns "browser" (opened), "clipboard" (copied instead) or "none".
+--// Three routes, in order of quality:
+--//   1. BrowserService / GuiService:OpenBrowserWindow - core services that the
+--//      engine exposes to any executor running at thread identity 8.
+--//   2. MessageBusService "Linking/openURLRequest" - the escape hatch the
+--//      client itself uses for deep links; works where the services are fenced.
+--//   3. Launcher globals some executors inject, e.g. openbrowser(url).
 local LINK_LAUNCHERS = { "openbrowser", "openbrowserwindow", "open_url", "openurl", "open_web", "launchurl", "launch_url" }
 function VibeUI.OpenLink(url)
 	url = tostring(url or "")
 	if url == "" then return "none" end
+
+	for _, svc in ipairs({ "BrowserService", "GuiService" }) do
+		local ok, inst = pcall(function() return game:GetService(svc) end)
+		if ok and inst then
+			local ok2 = pcall(function() inst:OpenBrowserWindow(url) end)
+			if ok2 then return "browser" end
+		end
+	end
+
+	local okMb = pcall(function()
+		local mbs = game:GetService("MessageBusService")
+		mbs:Publish(mbs:GetMessageId("Linking", "openURLRequest"), { url = url })
+	end)
+	if okMb then return "browser" end
+
 	local env = nil
 	pcall(function() env = getgenv() end)
 	for _, name in ipairs(LINK_LAUNCHERS) do
@@ -7353,7 +7372,7 @@ local function buildDemo()
 		end
 	end)
 
-	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.2 acrylic", Autosave = true })
+	local win = VibeUI:CreateWindow({ Title = "Atherium", Subtitle = "v11.3 acrylic", Autosave = true })
 
 	local home = win:AddTab("Home", "house")
 	local w = home:AddSection("General", "sparkles")
@@ -7572,7 +7591,7 @@ local function buildDemo()
 		pcall(function() subPick:Set(th.sub or Color3.fromRGB(161, 161, 170)) end)
 	end
 
-	print("[ATHERIUM] demo v11.2 built")
+	print("[ATHERIUM] demo v11.3 built")
 	win:CreateKeyList()
 	win:CreateWatermark()
 	pcall(function() win:LoadConfig() end)
